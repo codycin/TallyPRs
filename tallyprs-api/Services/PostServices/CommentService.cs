@@ -1,24 +1,31 @@
-﻿using Microsoft.AspNetCore.Authentication.BearerToken;
+﻿using Azure.Core;
+using Microsoft.AspNetCore.Authentication.BearerToken;
 using Microsoft.EntityFrameworkCore;
+using System.Numerics;
 using TallahasseePRs.Api.Data;
 using TallahasseePRs.Api.DTOs.Comments;
+using TallahasseePRs.Api.Models.Enums;
 using TallahasseePRs.Api.Models.Posts;
+using TallahasseePRs.Api.Models.Users;
+using TallahasseePRs.Api.Services.Notifications;
 
 namespace TallahasseePRs.Api.Services.PostServices
 {
     public sealed class CommentService : ICommentService
     {
         private readonly AppDbContext _db;
+        private readonly INotificationService _notificationService;
 
-        public CommentService(AppDbContext db)
+        public CommentService(AppDbContext db, INotificationService notificationService)
         {
             _db = db;
+            _notificationService = notificationService;
         }
 
         public async Task<CommentResponse> CreateTopLevelAsync(Guid postId, Guid userId, string body)
         {
-            var postExists = await _db.Posts.AnyAsync(p => p.Id == postId );
-            if (!postExists)
+            var post = await _db.Posts.FirstOrDefaultAsync(p => p.Id == postId );
+            if (post is null)
             {
                 throw new KeyNotFoundException("Post not found");
             }
@@ -39,6 +46,13 @@ namespace TallahasseePRs.Api.Services.PostServices
 
             _db.Comments.Add(comment);
             await _db.SaveChangesAsync();
+
+            await _notificationService.CreateAsync(
+                recipientId: post.UserId,
+                actorId: userId,
+                type: NotificationType.Comment,
+                message: $"{userName} commented on your post"
+            );
 
             return ToResponse(comment, replies: new List<CommentResponse>());
 
@@ -74,6 +88,13 @@ namespace TallahasseePRs.Api.Services.PostServices
 
             _db.Comments.Add(comment);
             await _db.SaveChangesAsync();
+
+            await _notificationService.CreateAsync(
+                recipientId: parent.UserId,
+                actorId: userId,
+                type: NotificationType.Comment,
+                message: $"{userName} replied to your comment"
+            );
 
             return ToResponse(comment, replies: new List<CommentResponse>());
         }

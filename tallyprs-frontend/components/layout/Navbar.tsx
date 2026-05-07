@@ -2,10 +2,12 @@
 
 import Link from "next/link";
 import { useState, useRef, useEffect } from "react";
-import { BiDotsVerticalRounded, BiSearch } from "react-icons/bi";
+import { BiDotsVerticalRounded, BiSearch, BiBell } from "react-icons/bi";
+import { getUnreadNotificationCount } from "@/services/Notifications/notificationService";
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
   const menuRef = useRef<HTMLDivElement | null>(null);
 
   // Close dropdown when clicking outside
@@ -18,6 +20,19 @@ export default function Navbar() {
 
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    async function loadUnreadCount() {
+      try {
+        const count = await getUnreadNotificationCount();
+        setUnreadCount(count);
+      } catch {
+        setUnreadCount(0);
+      }
+    }
+
+    loadUnreadCount();
   }, []);
 
   return (
@@ -35,6 +50,17 @@ export default function Navbar() {
           className="p-2 rounded-full hover:bg-zinc-800 transition"
         >
           <BiSearch size={22} />
+        </Link>
+        <Link
+          href="/notifications"
+          className="relative p-2 rounded-full hover:bg-zinc-800 transition"
+          aria-label="Notifications"
+        >
+          <BiBell size={22} />
+
+          {unreadCount > 0 && (
+            <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-zinc-400 ring-1 ring-black" />
+          )}
         </Link>
 
         {/* 3-dot menu */}
@@ -55,13 +81,6 @@ export default function Navbar() {
             >
               Settings
             </Link>
-
-            {/* Future options */}
-            {/* 
-            <Link href="/profile" className="block px-4 py-3 hover:bg-zinc-800">
-              Profile
-            </Link>
-            */}
           </div>
         )}
       </div>
