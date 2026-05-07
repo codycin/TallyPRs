@@ -57,6 +57,7 @@ builder.Services.AddScoped<IFollowService, FollowService>();
 builder.Services.AddScoped<ProfileService>();
 builder.Services.AddScoped<IProfileService>(sp => sp.GetRequiredService<ProfileService>());
 builder.Services.AddScoped<IProfileQueryService>(sp => sp.GetRequiredService<ProfileService>());
+builder.Services.AddScoped<IUserSearchService, UserSearchService>();
 
 // Post services
 builder.Services.AddScoped<IPostService, PostService>();
@@ -71,13 +72,12 @@ builder.Services.AddScoped<INotificationService, NotificationService>();
 
 // Media service
 builder.Services.Configure<MediaOptions>(
-    builder.Configuration.GetSection("Media"));
+builder.Configuration.GetSection("Media"));
 builder.Services.AddScoped<IMediaService, MediaService>();
 
 //Video Processing
 builder.Services.Configure<VideoProcessingOptions>(
-    builder.Configuration.GetSection("VideoProcessing"));
-
+builder.Configuration.GetSection("VideoProcessing"));
 builder.Services.AddScoped<IVideoProcessingService, VideoProcessingService>();
 
 // Storage services
