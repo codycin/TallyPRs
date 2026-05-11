@@ -10,10 +10,12 @@ export type LoginRequest = {
 };
 
 export type AuthResponse = {
-  token: string;
-  refresh: string;
-  expiresAt: string;
-  userId: string;
-  email: string;
-  username: string;
+  user: {
+    email: string;
+    userName: string;
+    id: string;
+  };
+  accessToken: string;
+  refreshToken: string;
+  accessTokenExpiration: string;
 };

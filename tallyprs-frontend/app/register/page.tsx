@@ -2,11 +2,13 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { registerUser } from "@/services/authService";
+import { registerUser, loginUser } from "@/services/authService";
+import { useAuth } from "@/lib/auth/authContext";
 
 export default function RegisterPage() {
   const router = useRouter();
 
+  const { login } = useAuth(); // <--- Moved this out of handleSubmit!
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -25,9 +27,10 @@ export default function RegisterPage() {
         password,
       });
 
-      localStorage.setItem("token", result.token);
-      localStorage.setItem("userId", result.userId);
-      localStorage.setItem("username", result.username);
+      login(result.accessToken, result.refreshToken);
+      localStorage.setItem("currentUserId", result.user.id);
+      localStorage.setItem("username", result.user.userName);
+      localStorage.setItem("email", result.user.email);
 
       router.push("/");
     } catch (err) {

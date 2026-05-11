@@ -14,7 +14,12 @@ import { uploadMultipleMedia } from "@/services/mediaService";
 import { MediaPurpose } from "@/types/media";
 import { createPost } from "@/services/Post/posts";
 
+import imageCompression from "browser-image-compression";
+import Cropper from "react-easy-crop";
+import getCroppedImg from "@/utils/cropImage";
+
 type SelectedFile = {
+  localId: string;
   file: File;
   previewUrl: string;
   kind: "image" | "video" | "other";
@@ -46,6 +51,14 @@ export default function CreatePostPage() {
   const [selectedFiles, setSelectedFiles] = useState<SelectedFile[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
+
+  const [cropImageSrc, setCropImageSrc] = useState<string | null>(null);
+
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
 
   const canSubmit = useMemo(() => {
     return title.trim().length > 0 && description.trim().length > 0;
@@ -57,20 +70,57 @@ export default function CreatePostPage() {
     };
   }, [selectedFiles]);
 
-  function handleFilesChange(event: ChangeEvent<HTMLInputElement>) {
+  async function handleFilesChange(event: ChangeEvent<HTMLInputElement>) {
     const files = Array.from(event.target.files ?? []);
     if (files.length === 0) return;
 
-    const mapped: SelectedFile[] = files.map((file) => ({
-      file,
-      previewUrl: URL.createObjectURL(file),
-      kind: getFileKind(file),
-    }));
+    const processedFiles: SelectedFile[] = [];
 
-    setSelectedFiles((prev) => [...prev, ...mapped]);
+    for (const file of files) {
+      const kind = getFileKind(file);
+
+      let processedFile = file;
+
+      if (kind === "image") {
+        try {
+          processedFile = await imageCompression(file, {
+            maxSizeMB: 2,
+            maxWidthOrHeight: 2000,
+            useWebWorker: true,
+          });
+        } catch (error) {
+          console.error("Compression failed:", error);
+        }
+      }
+
+      const previewUrl = URL.createObjectURL(processedFile);
+
+      processedFiles.push({
+        localId: crypto.randomUUID(),
+        file: processedFile,
+        previewUrl,
+        kind,
+      });
+    }
+
+    setSelectedFiles((prev) => {
+      const startIndex = prev.length;
+      const next = [...prev, ...processedFiles];
+
+      const firstImageIndex = processedFiles.findIndex(
+        (item) => item.kind === "image",
+      );
+
+      if (firstImageIndex !== -1) {
+        setCropImageSrc(processedFiles[firstImageIndex].previewUrl);
+        setEditingIndex(startIndex + firstImageIndex);
+      }
+
+      return next;
+    });
+
     event.target.value = "";
   }
-
   function removeFile(indexToRemove: number) {
     setSelectedFiles((prev) => {
       const fileToRemove = prev[indexToRemove];
@@ -79,6 +129,20 @@ export default function CreatePostPage() {
       }
 
       return prev.filter((_, index) => index !== indexToRemove);
+    });
+  }
+  function moveFile(index: number, direction: "left" | "right") {
+    setSelectedFiles((prev) => {
+      const targetIndex = direction === "left" ? index - 1 : index + 1;
+
+      if (targetIndex < 0 || targetIndex >= prev.length) {
+        return prev;
+      }
+
+      const copy = [...prev];
+      [copy[index], copy[targetIndex]] = [copy[targetIndex], copy[index]];
+
+      return copy;
     });
   }
 
@@ -217,9 +281,30 @@ export default function CreatePostPage() {
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                 {selectedFiles.map((item, index) => (
                   <div
-                    key={`${item.file.name}-${item.file.size}-${index}`}
+                    key={item.localId}
                     className="relative overflow-hidden rounded-2xl border border-gray-800 bg-white"
                   >
+                    <div className="absolute left-2 top-2 z-10 flex gap-1">
+                      <button
+                        type="button"
+                        onClick={() => moveFile(index, "left")}
+                        disabled={index === 0}
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-black/70 text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-40"
+                        aria-label="Move media left"
+                      >
+                        ←
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => moveFile(index, "right")}
+                        disabled={index === selectedFiles.length - 1}
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-black/70 text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-40"
+                        aria-label="Move media right"
+                      >
+                        →
+                      </button>
+                    </div>
                     <button
                       type="button"
                       onClick={() => removeFile(index)}
@@ -229,7 +314,7 @@ export default function CreatePostPage() {
                       <BiX size={18} />
                     </button>
 
-                    <div className="aspect-square bg-gray-100">
+                    <div className="aspect-[4/5] max-h-[360px] bg-gray-100">
                       {item.kind === "image" ? (
                         <img
                           src={item.previewUrl}
@@ -299,6 +384,78 @@ export default function CreatePostPage() {
           </div>
         </form>
       </div>
+      {cropImageSrc && editingIndex !== null && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90">
+          <div className="relative h-[80vh] w-full max-w-lg">
+            <Cropper
+              image={cropImageSrc}
+              crop={crop}
+              zoom={zoom}
+              aspect={4 / 5}
+              onCropChange={setCrop}
+              onZoomChange={setZoom}
+              onCropComplete={(_, croppedPixels) => {
+                setCroppedAreaPixels(croppedPixels);
+              }}
+            />
+
+            <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-4">
+              <button
+                type="button"
+                onClick={() => {
+                  setCropImageSrc(null);
+                  setEditingIndex(null);
+                }}
+                className="rounded-xl bg-gray-700 px-4 py-2 text-white"
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                onClick={async () => {
+                  if (!croppedAreaPixels) return;
+
+                  const croppedBlob = await getCroppedImg(
+                    cropImageSrc,
+                    croppedAreaPixels,
+                  );
+
+                  const original = selectedFiles[editingIndex];
+
+                  const croppedFile = new File(
+                    [croppedBlob],
+                    original.file.name,
+                    {
+                      type: "image/jpeg",
+                    },
+                  );
+
+                  const newPreview = URL.createObjectURL(croppedFile);
+
+                  setSelectedFiles((prev) =>
+                    prev.map((item, index) =>
+                      index === editingIndex
+                        ? {
+                            ...item,
+                            file: croppedFile,
+                            previewUrl: newPreview,
+                          }
+                        : item,
+                    ),
+                  );
+
+                  setCropImageSrc(null);
+                  setEditingIndex(null);
+                }}
+                className="rounded-xl bg-white px-4 py-2 text-black"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

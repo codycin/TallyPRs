@@ -1,36 +1,43 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect } from "react";
+import {
+  getAccessTokenFromStorage,
+  setAccessTokenInStorage,
+  removeAccessTokenFromStorage,
+  removeRefreshTokenFromStorage,
+  setRefreshTokenInStorage,
+} from "@/lib/storage/authStorage";
 
-// 1. Define the shape of our context
 type AuthContextType = {
   isLoggedIn: boolean;
-  login: (token: string) => void;
+  login: (accessToken: string, refreshToken: string) => void;
   logout: () => void;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// 2. Create the Provider component
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
-  // Check for the token when the app first loads
   useEffect(() => {
-    // Replace "access_token" with whatever key you use in storage
-    const token = localStorage.getItem("access_token");
+    const token = getAccessTokenFromStorage();
     setIsLoggedIn(!!token);
   }, []);
 
-  // 3. Create actions to update state AND local storage simultaneously
-  const login = (token: string) => {
-    localStorage.setItem("access_token", token);
-    setIsLoggedIn(true); // This triggers the instant re-render!
+  const login = (accessToken: string, refreshToken: string) => {
+    setAccessTokenInStorage(accessToken);
+    setRefreshTokenInStorage(refreshToken);
+    setIsLoggedIn(true);
   };
 
   const logout = () => {
-    localStorage.removeItem("access_token");
-    setIsLoggedIn(false); // This triggers the instant re-render!
+    removeAccessTokenFromStorage();
+    removeRefreshTokenFromStorage();
+    localStorage.removeItem("currentUserId");
+    localStorage.removeItem("username");
+    localStorage.removeItem("email");
+    setIsLoggedIn(false);
   };
 
   return (
@@ -40,11 +47,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-// 4. Create a custom hook for easy access
 export function useAuth() {
   const context = useContext(AuthContext);
+
   if (context === undefined) {
     throw new Error("useAuth must be used within an AuthProvider");
   }
+
   return context;
 }

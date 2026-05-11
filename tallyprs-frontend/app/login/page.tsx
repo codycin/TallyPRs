@@ -28,9 +28,10 @@ export default function LoginPage() {
       });
 
       // 3. Use the login function down here
-      login(result.token);
-      localStorage.setItem("userId", result.userId);
-      localStorage.setItem("username", result.username);
+      login(result.accessToken, result.refreshToken);
+      localStorage.setItem("currentUserId", result.user.id);
+      localStorage.setItem("username", result.user.userName);
+      localStorage.setItem("email", result.user.email);
 
       router.push("/home");
     } catch (err) {

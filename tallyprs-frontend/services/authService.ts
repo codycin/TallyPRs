@@ -1,57 +1,60 @@
 import type { AuthResponse, LoginRequest, RegisterRequest } from "@/types/auth";
 import { apiFetch } from "./apiClient";
-import { setAccessTokenInStorage } from "@/lib/storage/authStorage";
+import { getRefreshTokenFromStorage } from "@/lib/storage/authStorage";
+import { API_BASE_URL } from "@/lib/api";
 
 export async function registerUser(
   request: RegisterRequest,
 ): Promise<AuthResponse> {
-  const response = await apiFetch(`/auth/register`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
+  const response = await apiFetch(
+    `/auth/register`,
+    {
+      method: "POST",
+      body: JSON.stringify(request),
     },
-    body: JSON.stringify(request),
-  });
+    false,
+  );
 
   if (!response.ok) {
     const errorText = await response.text();
     throw new Error(errorText || "Registration Failed");
   }
 
-  const data = await response.json();
-
-  setAccessTokenInStorage(data.accessToken);
-  localStorage.setItem("userId", data.userId);
-
-  return data;
+  return response.json();
 }
 
 export async function loginUser(request: LoginRequest): Promise<AuthResponse> {
-  const response = await apiFetch(`/auth/login`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
+  const response = await apiFetch(
+    `/auth/login`,
+    {
+      method: "POST",
+      body: JSON.stringify(request),
     },
-    body: JSON.stringify(request),
-  });
+    false,
+  );
 
   if (!response.ok) {
     const errorText = await response.text();
     throw new Error(errorText || "Login Failed");
   }
 
-  const data = await response.json();
+  return response.json();
+}
 
-  setAccessTokenInStorage(data.accessToken);
+export async function RefreshAccessToken(): Promise<AuthResponse | null> {
+  const refreshToken = getRefreshTokenFromStorage();
 
-  console.log("user id from response:", data.user.id);
+  if (!refreshToken) return null;
 
-  localStorage.setItem("currentUserId", data.user.id);
+  const response = await fetch(`${API_BASE_URL}/api/auth/refresh`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ refreshToken }),
+  });
 
-  localStorage.setItem("testKey", "hello");
-  console.log(localStorage.getItem("testKey"));
+  if (!response.ok) return null;
 
-  console.log("user id from localStorage:", localStorage.getItem("userId"));
-
-  return data;
+  return response.json();
 }
