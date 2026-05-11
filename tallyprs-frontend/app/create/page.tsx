@@ -17,6 +17,8 @@ import { createPost } from "@/services/Post/posts";
 import imageCompression from "browser-image-compression";
 import Cropper from "react-easy-crop";
 import getCroppedImg from "@/utils/cropImage";
+import { LiftResponse } from "@/types/lift";
+import { searchLifts } from "@/services/Lifts/liftService";
 
 type SelectedFile = {
   localId: string;
@@ -48,11 +50,16 @@ export default function CreatePostPage() {
   const [liftId, setLiftId] = useState("");
   const [weight, setWeight] = useState("");
   const [unit, setUnit] = useState("");
+  const [nonJudgedLift, setNonJudgedLift] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<SelectedFile[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
+
+  const [liftSearch, setLiftSearch] = useState("");
+  const [liftResults, setLiftResults] = useState<LiftResponse[]>([]);
+  const [selectedLift, setSelectedLift] = useState<LiftResponse | null>(null);
 
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
 
@@ -60,9 +67,41 @@ export default function CreatePostPage() {
 
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
 
+  useEffect(() => {
+    if (nonJudgedLift) {
+      setLiftResults([]);
+      setSelectedLift(null);
+      setLiftId("");
+      return;
+    }
+
+    const timeout = setTimeout(async () => {
+      try {
+        const results = await searchLifts(liftSearch);
+        setLiftResults(results);
+      } catch (error) {
+        console.error(error);
+      }
+    }, 300);
+
+    return () => clearTimeout(timeout);
+  }, [liftSearch, nonJudgedLift]);
+
   const canSubmit = useMemo(() => {
-    return title.trim().length > 0 && description.trim().length > 0;
-  }, [title, description]);
+    if (title.trim().length === 0 || description.trim().length === 0) {
+      return false;
+    }
+
+    if (nonJudgedLift) {
+      return true;
+    }
+
+    return (
+      liftId.trim().length > 0 &&
+      weight.trim().length > 0 &&
+      unit.trim().length > 0
+    );
+  }, [title, description, liftId, weight, unit, nonJudgedLift]);
 
   useEffect(() => {
     return () => {
@@ -167,9 +206,12 @@ export default function CreatePostPage() {
         title: title.trim(),
         description: description.trim(),
         mediaIds: uploadedMedia.map((media) => media.id),
-        liftId: null,
-        weight: null,
-        unit: null,
+
+        liftId: nonJudgedLift ? "00000000-0000-0000-0000-000000000000" : liftId,
+
+        weight: nonJudgedLift ? null : Number(weight),
+
+        unit: nonJudgedLift ? null : unit,
       };
 
       console.log("CreatePost payload:", payload);
@@ -248,6 +290,135 @@ export default function CreatePostPage() {
               </p>
             </div>
           </section>
+          <div className="flex items-center justify-between rounded-2xl border border-gray-700 bg-zinc-900 px-4 py-3">
+            <div className="pr-4">
+              <p className="text-sm font-medium text-white">Non-judged lift</p>
+
+              <p className="text-xs text-gray-400">
+                Mark this if the lift cannot be officially verified.
+              </p>
+            </div>
+
+            <label className="flex cursor-pointer items-center">
+              <input
+                type="checkbox"
+                checked={nonJudgedLift}
+                onChange={(e) => setNonJudgedLift(e.target.checked)}
+                className="peer sr-only"
+              />
+
+              <span className="relative h-6 w-11 rounded-full bg-gray-700 transition peer-checked:bg-white peer-checked:[&>span]:translate-x-5">
+                <span className="absolute left-[2px] top-[2px] h-5 w-5 rounded-full bg-black transition-transform duration-200" />
+              </span>
+            </label>
+          </div>
+
+          {!nonJudgedLift && (
+            <section className="space-y-4 rounded-2xl border border-gray-800 bg-zinc-950 p-4">
+              <div>
+                <h2 className="text-sm font-medium text-white">Lift Details</h2>
+                <p className="text-xs text-gray-400">
+                  Select the lift and enter the weight for this PR.
+                </p>
+              </div>
+
+              <div className="relative">
+                <label
+                  htmlFor="lift"
+                  className="mb-2 block text-sm font-medium text-white"
+                >
+                  Lift
+                </label>
+
+                <input
+                  id="lift"
+                  type="text"
+                  value={liftSearch}
+                  onChange={(e) => {
+                    setLiftSearch(e.target.value);
+                    setSelectedLift(null);
+                    setLiftId("");
+                  }}
+                  placeholder="Search bench, squat, deadlift..."
+                  className="w-full rounded-2xl border border-gray-700 bg-zinc-900 px-4 py-3 text-sm text-white outline-none transition focus:border-white"
+                />
+
+                {liftResults.length > 0 && !selectedLift && (
+                  <div className="absolute z-20 mt-2 max-h-64 w-full overflow-y-auto rounded-2xl border border-gray-700 bg-zinc-950 shadow-xl">
+                    {liftResults.map((lift) => (
+                      <button
+                        key={lift.id}
+                        type="button"
+                        onClick={() => {
+                          setSelectedLift(lift);
+                          setLiftId(lift.id);
+                          setLiftSearch(lift.name);
+                          setUnit(lift.defaultUnit);
+                          setLiftResults([]);
+                        }}
+                        className="flex w-full items-center justify-between px-4 py-3 text-left transition hover:bg-zinc-900"
+                      >
+                        <div>
+                          <p className="text-sm font-medium text-white">
+                            {lift.name}
+                          </p>
+                          <p className="text-xs text-gray-400">
+                            {lift.category}
+                          </p>
+                        </div>
+
+                        <span className="text-xs text-gray-500">
+                          {lift.defaultUnit}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="grid grid-cols-3 gap-3">
+                <div className="col-span-2">
+                  <label
+                    htmlFor="weight"
+                    className="mb-2 block text-sm font-medium text-white"
+                  >
+                    Weight
+                  </label>
+
+                  <input
+                    id="weight"
+                    type="number"
+                    value={weight}
+                    onChange={(e) => setWeight(e.target.value)}
+                    placeholder="225"
+                    min="0"
+                    step="0.5"
+                    className="w-full rounded-2xl border border-gray-700 bg-zinc-900 px-4 py-3 text-sm text-white outline-none transition focus:border-white"
+                  />
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="unit"
+                    className="mb-2 block text-sm font-medium text-white"
+                  >
+                    Unit
+                  </label>
+
+                  <select
+                    id="unit"
+                    value={unit}
+                    onChange={(e) => setUnit(e.target.value)}
+                    className="w-full rounded-2xl border border-gray-700 bg-zinc-900 px-4 py-3 text-sm text-white outline-none transition focus:border-white"
+                  >
+                    <option value="">Unit</option>
+                    <option value="lb">lb</option>
+                    <option value="kg">kg</option>
+                  </select>
+                </div>
+              </div>
+            </section>
+          )}
 
           <section className="space-y-3">
             <div className="flex items-center justify-between">
@@ -314,7 +485,7 @@ export default function CreatePostPage() {
                       <BiX size={18} />
                     </button>
 
-                    <div className="aspect-[4/5] max-h-[360px] bg-gray-100">
+                    <div className="aspect-4/5 max-h-90 bg-gray-100">
                       {item.kind === "image" ? (
                         <img
                           src={item.previewUrl}

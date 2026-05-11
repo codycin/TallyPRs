@@ -1,17 +1,20 @@
 using Amazon.S3;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.Security.Claims;
 using System.Text;
+using System.Threading.RateLimiting;
 using TallahasseePRs.Api.Data;
 using TallahasseePRs.Api.Data.Configurations;
 using TallahasseePRs.Api.Models;
 using TallahasseePRs.Api.Models.Users;
 using TallahasseePRs.Api.Security;
+using TallahasseePRs.Api.Seeders;
 using TallahasseePRs.Api.Services;
 using TallahasseePRs.Api.Services.FeedServices;
 using TallahasseePRs.Api.Services.FollowServices;
@@ -20,8 +23,6 @@ using TallahasseePRs.Api.Services.Notifications;
 using TallahasseePRs.Api.Services.PostServices;
 using TallahasseePRs.Api.Services.ProfileServices;
 using TallahasseePRs.Api.Services.Storage;
-using Microsoft.AspNetCore.RateLimiting;
-using System.Threading.RateLimiting;
 using static TallahasseePRs.Api.Services.CurrentUserService;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -196,18 +197,13 @@ using (var scope = app.Services.CreateScope())
 
     db.Database.Migrate();
 
+
     if (!db.Lifts.Any())
     {
-        db.Lifts.Add(new Lift
-        {
-            Id = Guid.Parse("11111111-1111-1111-1111-111111111111"),
-            Name = "Bench Press"
-        });
-
-        db.SaveChanges();
+        await LiftSeeder.SeedAsync(db);
     }
 
-    await AdminSeeder.SeedAsync(db);
+        await AdminSeeder.SeedAsync(db);
 }
 
 

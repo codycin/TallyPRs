@@ -31,6 +31,7 @@ export default function RegisterPage() {
       localStorage.setItem("currentUserId", result.user.id);
       localStorage.setItem("username", result.user.userName);
       localStorage.setItem("email", result.user.email);
+      localStorage.setItem("role", result.user.role);
 
       router.push("/");
     } catch (err) {

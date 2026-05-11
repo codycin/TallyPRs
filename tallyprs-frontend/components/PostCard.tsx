@@ -13,6 +13,7 @@ import { PostResponse } from "@/types/post";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { deletePost } from "@/services/Post/posts";
+import Judge from "./Judge";
 
 type PostCardProps = {
   post: PostResponse;
@@ -50,6 +51,8 @@ export default function PostCard({ post, onDeleted }: PostCardProps) {
   const [commentFormOpen, setCommentFormOpen] = useState(false);
   const [newCommentBody, setNewCommentBody] = useState("");
   const [commentSubmitting, setCommentSubmitting] = useState(false);
+
+  const isAdmin = localStorage.getItem("role") === "Admin";
 
   const [replyingToCommentId, setReplyingToCommentId] = useState<string | null>(
     null,
@@ -176,6 +179,11 @@ export default function PostCard({ post, onDeleted }: PostCardProps) {
       }));
   }
 
+  const [status, setStatus] = useState(post.status);
+  function handleJudged(newStatus: number) {
+    setStatus(newStatus);
+  }
+
   async function handleDeletePost() {
     const confirmed = window.confirm("Delete this post?");
     if (!confirmed || isDeleting) return;
@@ -213,7 +221,7 @@ export default function PostCard({ post, onDeleted }: PostCardProps) {
         <div className="space-x-5">
           <span>{createdDate}</span>
 
-          {currentUserId === post.userId && (
+          {(currentUserId === post.userId || isAdmin) && (
             <button
               type="button"
               className="rounded-full px-2 py-1 text-xs font-medium bg-red-500/10 text-red-400"
@@ -237,9 +245,11 @@ export default function PostCard({ post, onDeleted }: PostCardProps) {
       {/* Title + Lift */}
       <div>
         <h2 className="text-lg font-semibold text-gray-900">{post.title}</h2>
-        <p className="text-sm text-gray-600">
-          {post.weight} {post.unit}
-        </p>
+        {post.weight !== null && (
+          <p className="text-sm text-gray-600">
+            {post.weight} {post.unit}
+          </p>
+        )}
       </div>
 
       {/* Media */}
@@ -256,7 +266,7 @@ export default function PostCard({ post, onDeleted }: PostCardProps) {
                     <img
                       src={m.url}
                       alt={`post media ${index + 1}`}
-                      className="h-[420px] max-h-[70vh] w-full object-cover md:rounded-xl"
+                      className="h-105 max-h-[70vh] w-full object-cover md:rounded-xl"
                     />
 
                     {post.media.length > 1 && (
@@ -337,15 +347,30 @@ export default function PostCard({ post, onDeleted }: PostCardProps) {
       )}
 
       {/* Status Badge */}
-      {post.status === 0 && (
-        <div className="text-xs px-2 py-1 rounded bg-yellow-100 text-yellow-700 w-fit">
-          Pending...
-        </div>
-      )}
-      {post.status == 2 && (
-        <div className="text-xs px-2 py-1 rounded bg-red-200 text-red-700 w-fit">
-          Rejected.
-        </div>
+      {post.liftId !== "00000000-0000-0000-0000-000000000000" && (
+        <>
+          {status === 0 && (
+            <div className="text-xs px-2 py-1 rounded bg-yellow-100 text-yellow-700 w-fit">
+              Pending...
+            </div>
+          )}
+
+          {status === 1 && (
+            <div className="text-xs px-2 py-1 rounded bg-green-100 text-green-700 w-fit">
+              Approved
+            </div>
+          )}
+
+          {status === 2 && (
+            <div className="text-xs px-2 py-1 rounded bg-red-200 text-red-700 w-fit">
+              Rejected.
+            </div>
+          )}
+
+          {isAdmin && (
+            <Judge post={post} onDeleted={onDeleted} onJudged={handleJudged} />
+          )}
+        </>
       )}
 
       {/* Engagement */}

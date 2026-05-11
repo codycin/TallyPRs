@@ -194,7 +194,11 @@ namespace TallahasseePRs.Api.Services.PostServices
 
         public async Task<PostResponse?> JudgeAsync(Guid postId, JudgeRequest request, Guid judgeUserId)
         {
-            var post = await _db.Posts.FirstOrDefaultAsync(p => p.Id == postId); if (post == null) return null;
+            var post = await _db.Posts
+                .Include(p => p.User)
+                .Include(p => p.MediaItems)
+                .FirstOrDefaultAsync(p => p.Id == postId);
+            if (post == null) return null;
             var targetUserId = post.UserId;
             var approval = request.Status == PRstatus.Approved ? NotificationType.PostApproved : NotificationType.PostRejected;
 
