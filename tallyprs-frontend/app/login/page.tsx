@@ -32,6 +32,7 @@ export default function LoginPage() {
       localStorage.setItem("currentUserId", result.user.id);
       localStorage.setItem("username", result.user.userName);
       localStorage.setItem("email", result.user.email);
+      localStorage.setItem("role", result.user.role);
 
       router.push("/home");
     } catch (err) {

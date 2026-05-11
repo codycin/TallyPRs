@@ -32,7 +32,8 @@ namespace TallahasseePRs.Api.Services
                 {
                     Id = user.Id,
                     Email = user.Email,
-                    UserName = user.UserName
+                    UserName = user.UserName,
+                    Role = user.Role
                 },
                 AccessToken = token,
                 AccessTokenExpiration = expiresAt,
@@ -62,7 +63,9 @@ namespace TallahasseePRs.Api.Services
 
             return new AuthResponse
             {
-                User = new UserResponse { Id = user.Id, Email = user.Email, UserName = user.UserName },
+                User = new UserResponse { Id = user.Id, Email = user.Email, UserName = user.UserName,
+                    Role = user.Role
+                },
                 AccessToken = token,
                 AccessTokenExpiration = expiresAt,
                 RefreshToken = rawRefresh
@@ -110,7 +113,9 @@ namespace TallahasseePRs.Api.Services
 
             return new AuthResponse
             {
-                User = new UserResponse { Id = user.Id, Email = user.Email, UserName = user.UserName },
+                User = new UserResponse { Id = user.Id, Email = user.Email, UserName = user.UserName,
+                    Role = user.Role
+                },
                 AccessToken = jwt,
                 AccessTokenExpiration = jwtExp,
                 RefreshToken = newRaw
