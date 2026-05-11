@@ -244,74 +244,90 @@ export default function PostCard({ post, onDeleted }: PostCardProps) {
 
       {/* Media */}
       {post.media.length > 0 && (
-        <div className="-mx-4 md:mx-0 space-y-3">
-          {post.media.map((m) => {
-            if (m.kind === "Image") {
-              //1
-              return (
-                <img
-                  key={m.id}
-                  src={m.url}
-                  alt="post media"
-                  className="w-full object-cover md:rounded-xl"
-                />
-              );
-            }
-
-            if (m.kind === "Video") {
-              //video
-              const isPlaying = !!playingVideos[m.id];
-
-              return (
-                <div
-                  key={m.id}
-                  className="relative w-full overflow-hidden bg-black md:rounded-xl"
-                >
-                  {!isPlaying ? (
-                    <button
-                      type="button"
-                      onClick={() => startVideo(m.id)}
-                      className="relative block w-full hover:cursor-pointer"
-                    >
-                      {m.thumbnailUrl ? (
-                        <img
-                          src={m.thumbnailUrl}
-                          alt="video thumbnail"
-                          className="w-full object-cover"
-                        />
-                      ) : (
-                        <div className="flex aspect-video w-full items-center justify-center bg-gray-200 text-sm text-gray-600">
-                          Video ready
-                        </div>
-                      )}
-
-                      <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white/90 text-2xl text-black shadow">
-                          ▶
-                        </div>
-                      </div>
-
-                      {m.durationSeconds != null && (
-                        <div className="absolute bottom-3 right-3 rounded bg-black/70 px-2 py-1 text-xs text-white">
-                          {formatDuration(m.durationSeconds)}
-                        </div>
-                      )}
-                    </button>
-                  ) : (
-                    <video
+        <div className="-mx-4 md:mx-0">
+          <div className="flex snap-x snap-mandatory overflow-x-auto rounded-none md:rounded-xl">
+            {post.media.map((m, index) => {
+              if (m.kind === "Image") {
+                return (
+                  <div
+                    key={m.id}
+                    className="relative min-w-full snap-center overflow-hidden bg-zinc-950"
+                  >
+                    <img
                       src={m.url}
-                      controls
-                      playsInline
-                      preload="metadata"
-                      className="w-full md:rounded-xl"
+                      alt={`post media ${index + 1}`}
+                      className="h-[420px] max-h-[70vh] w-full object-cover md:rounded-xl"
                     />
-                  )}
-                </div>
-              );
-            }
 
-            return null;
-          })}
+                    {post.media.length > 1 && (
+                      <div className="absolute right-3 top-3 rounded-full bg-black/60 px-2.5 py-1 text-xs text-white">
+                        {index + 1}/{post.media.length}
+                      </div>
+                    )}
+                  </div>
+                );
+              }
+
+              if (m.kind === "Video") {
+                const isPlaying = !!playingVideos[m.id];
+
+                return (
+                  <div
+                    key={m.id}
+                    className="relative min-w-full snap-center overflow-hidden bg-black md:rounded-xl"
+                  >
+                    {!isPlaying ? (
+                      <button
+                        type="button"
+                        onClick={() => startVideo(m.id)}
+                        className="relative block w-full hover:cursor-pointer"
+                      >
+                        {m.thumbnailUrl ? (
+                          <img
+                            src={m.thumbnailUrl}
+                            alt="video thumbnail"
+                            className="h-[420px] max-h-[70vh] w-full object-cover"
+                          />
+                        ) : (
+                          <div className="flex h-[420px] max-h-[70vh] w-full items-center justify-center bg-gray-200 text-sm text-gray-600">
+                            Video ready
+                          </div>
+                        )}
+
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white/90 text-xl text-black shadow">
+                            ▶
+                          </div>
+                        </div>
+
+                        {m.durationSeconds != null && (
+                          <div className="absolute bottom-3 right-3 rounded bg-black/70 px-2 py-1 text-xs text-white">
+                            {formatDuration(m.durationSeconds)}
+                          </div>
+                        )}
+
+                        {post.media.length > 1 && (
+                          <div className="absolute right-3 top-3 rounded-full bg-black/60 px-2.5 py-1 text-xs text-white">
+                            {index + 1}/{post.media.length}
+                          </div>
+                        )}
+                      </button>
+                    ) : (
+                      <video
+                        src={m.url}
+                        controls
+                        playsInline
+                        preload="metadata"
+                        className="h-[420px] max-h-[70vh] w-full object-contain md:rounded-xl"
+                      />
+                    )}
+                  </div>
+                );
+              }
+
+              return null;
+            })}
+          </div>
         </div>
       )}
 
