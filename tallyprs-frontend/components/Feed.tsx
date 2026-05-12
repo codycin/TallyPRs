@@ -31,14 +31,11 @@ export default function Feed<T>({
 
   useEffect(() => {
     async function loadInitial() {
-      console.log("[Feed] loadInitial started");
       try {
         setLoading(true);
         setError(null);
 
         const page = await fetchPage();
-
-        console.log("[Feed] page returned:", page);
 
         setItems(page.items);
         setNextCursor(page.nextCursor ?? null);
@@ -47,7 +44,6 @@ export default function Feed<T>({
         setError(err instanceof Error ? err.message : "Failed to load feed.");
       } finally {
         setLoading(false);
-        console.log("[Feed] loadInitial finished");
       }
     }
 
@@ -55,8 +51,6 @@ export default function Feed<T>({
   }, [fetchPage]);
 
   async function loadMore() {
-    console.log("[Feed] loadMore started with cursor:", nextCursor);
-
     if (!hasMore || loading) return;
 
     try {
@@ -64,8 +58,6 @@ export default function Feed<T>({
       setError(null);
 
       const page = await fetchPage(nextCursor ?? undefined);
-
-      console.log("[Feed] loadMore page returned:", page);
 
       setItems((prev) => [...prev, ...page.items]);
       setNextCursor(page.nextCursor ?? null);
@@ -76,7 +68,6 @@ export default function Feed<T>({
       );
     } finally {
       setLoading(false);
-      console.log("[Feed] loadMore finished");
     }
   }
 

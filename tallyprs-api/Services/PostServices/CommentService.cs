@@ -135,7 +135,7 @@ namespace TallahasseePRs.Api.Services.PostServices
                 }
                 else
                 {
-                    // orphan fallback: treat as root (shouldn't happen if data is consistent)
+                    // orphan fallback
                     roots.Add(node);
                 }
             }
@@ -143,12 +143,12 @@ namespace TallahasseePRs.Api.Services.PostServices
             return roots;
         }
 
-        public async Task DeleteAsync(Guid commentId, Guid requestingUserId)
+        public async Task DeleteAsync(Guid commentId, Guid requestingUserId, bool isAdmin)
         {
             var comment = await _db.Comments.FirstOrDefaultAsync(c => c.Id == commentId);
             if (comment is null) throw new KeyNotFoundException("Comment not found.");
 
-            if (comment.UserId != requestingUserId)
+            if (comment.UserId != requestingUserId && !isAdmin)
                 throw new UnauthorizedAccessException("You can only delete your own comments.");
 
             _db.Comments.Remove(comment);

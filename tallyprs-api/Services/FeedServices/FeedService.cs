@@ -101,6 +101,17 @@ namespace TallahasseePRs.Api.Services.FeedServices
                 .Where(v => v.UserId == requestingUser && postIds.Contains(v.PRPostId))
                 .ToDictionaryAsync(v => v.PRPostId, v => v.Value);
 
+            var userIds = posts
+                .Select(p => p.UserId)
+                .Distinct()
+                .ToList();
+
+            var profilesByUserId = await _db.Profiles
+                .AsNoTracking()
+                .Include(p => p.ProfilePicture)
+                .Where(p => userIds.Contains(p.UserId))
+                .ToDictionaryAsync(p => p.UserId);
+
             var items = new List<PostResponse>(posts.Count);
 
             foreach (var post in posts)
@@ -121,6 +132,9 @@ namespace TallahasseePRs.Api.Services.FeedServices
                     LiftId = post.LiftId,
                     Title = post.Title,
                     UserName = post.User.UserName,
+                    ProfilePictureUrl = profilesByUserId.TryGetValue(post.UserId, out var profile) && profile.ProfilePicture != null
+                        ? _storage.GetPublicUrl(profile.ProfilePicture.ObjectKey)
+                        : null,
                     Description = post.Description,
                     Media = post.MediaItems
                         .OrderBy(m => m.SortOrder)

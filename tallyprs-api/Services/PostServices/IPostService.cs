@@ -11,6 +11,8 @@ namespace TallahasseePRs.Api.Services.PostServices
         Task<PostResponse?> GetByIdAsync(Guid postId);
         Task<PostResponse?> UpdateAsync(Guid userId, Guid postId, UpdatePostRequest request, CancellationToken cancellationToken = default);
         Task<bool> DeleteAsync(Guid userId, Guid postId, bool isAdmin);
+        Task<bool> DeleteAsAdminAsync(Guid userId, Guid postId, string? comment);
+
 
         Task<PostResponse?> JudgeAsync(Guid postId, JudgeRequest request, Guid judgeUserId);
 

@@ -21,13 +21,15 @@ namespace TallahasseePRs.Api.Services.PostServices
         private readonly INotificationService _notificationService;
         private readonly IMediaService _mediaService;
         private readonly IObjectStorage _storage;
+        private readonly ICurrentUserService _currentUser;
         
-        public PostService(AppDbContext appDbContext, INotificationService notification, IMediaService mediaService, IObjectStorage storage)
+        public PostService(AppDbContext appDbContext, INotificationService notification, IMediaService mediaService, IObjectStorage storage, ICurrentUserService current)
         {
             _db = appDbContext;
             _notificationService = notification;
             _mediaService = mediaService;
             _storage = storage;
+            _currentUser = current;
         }
 
         //Create post
@@ -36,6 +38,16 @@ namespace TallahasseePRs.Api.Services.PostServices
             
 
             var mediaItems = await ValidateAndLoadMediaAsync(userId, request.MediaIds, currentPostId: null, cancellationToken);
+
+            if(request.LiftId != null)
+            {
+                var liftExists = await _db.Lifts
+                    .AnyAsync(l => l.Id == request.LiftId.Value, cancellationToken);
+
+                if (!liftExists)
+                    throw new InvalidOperationException("LiftId does not exist.");
+            }
+            
 
             //Now we create the new post
             var post = new PRPost
@@ -72,89 +84,132 @@ namespace TallahasseePRs.Api.Services.PostServices
                 .Include(p => p.MediaItems)
                 .FirstAsync(p => p.Id == post.Id, cancellationToken);
 
-            return ToResponse(savedPost, commentCount: 0);
+            var profilePictureUrl = await GetProfilePictureUrlAsync(userId, cancellationToken);
+
+            return ToResponse(
+                savedPost,
+                commentCount: 0,
+                voteCount: 0,
+                myVoteValue: null,
+                profilePictureUrl: profilePictureUrl);
 
         }
 
         public async Task<PostResponse?> GetByIdAsync(Guid postId)
         {
-            //Get the post by ID
-            return await _db.Posts
-                .Where(p => p.Id == postId)
-                .Select(p => new PostResponse //Creates new PostResponse with the selection
-                {
-                    Id = p.Id,
-                    UserId = p.UserId,
-                    LiftId = p.LiftId,
-                    Title = p.Title,
-                    UserName = p.User.UserName,
-                    Description = p.Description,
-                    Weight = p.Weight,
-                    Unit = p.Unit,
-                    Status = p.Status,
-                    JudgedByAdminID = p.JudgedByAdminID,
-                    JudgeNote = p.JudgeNote,
-                    JudgedAt = p.JudgedAt,
-                    CreatedAt = p.CreatedAt,
-                    CommentCount = p.Comments.Count
-                })
+            
+            var post = await _db.Posts
+                .AsNoTracking()
+                .Include(p => p.User)
+                .Include(p => p.MediaItems)
+                .FirstOrDefaultAsync(p => p.Id == postId);
+
+            if (post is null)
+                return null;
+
+            var commentCount = await _db.Comments
+                .AsNoTracking()
+                .CountAsync(c => c.PRPostId == postId);
+
+            var voteCount = await _db.Votes
+                .AsNoTracking()
+                .Where(v => v.PRPostId == postId && v.Value == VoteValue.Up)
+                .CountAsync();
+
+            var userId = _currentUser.UserId;
+
+            var myVoteValue = await _db.Votes
+                .AsNoTracking()
+                .Where(v => v.PRPostId == postId && v.UserId == userId)
+                .Select(v => (VoteValue?)v.Value)
                 .FirstOrDefaultAsync();
+
+            var profilePictureUrl = await GetProfilePictureUrlAsync(post.UserId);
+
+            return ToResponse(
+                post,
+                commentCount,
+                voteCount,
+                myVoteValue: myVoteValue,
+                profilePictureUrl: profilePictureUrl);
         }
         //Update posts
-        public async Task<PostResponse?> UpdateAsync(Guid userId, Guid postId, UpdatePostRequest request, CancellationToken cancellationToken = default)
+        public async Task<PostResponse?> UpdateAsync(
+    Guid userId,
+    Guid postId,
+    UpdatePostRequest request,
+    CancellationToken cancellationToken = default)
         {
-            //Fetch ID and check
-            var post = await _db.Posts.FirstOrDefaultAsync(p => p.Id == postId);
-            if (post is null) return null;
+            var post = await _db.Posts
+                .Include(p => p.MediaItems)
+                .FirstOrDefaultAsync(p => p.Id == postId, cancellationToken);
 
-            // Make sure User is trying to edit post
+            if (post is null)
+                return null;
+
             if (post.UserId != userId)
                 throw new UnauthorizedAccessException("You do not own this post.");
 
-            //Checks that new LiftId infact does exist
             if (request.LiftId.HasValue)
             {
-                var liftExists = await _db.Lifts.AnyAsync(l => l.Id == request.LiftId.Value);
+                var liftExists = await _db.Lifts
+                    .AnyAsync(l => l.Id == request.LiftId.Value, cancellationToken);
+
                 if (!liftExists)
                     throw new InvalidOperationException("LiftId does not exist.");
 
                 post.LiftId = request.LiftId.Value;
             }
 
+            var requestedMediaIds = request.MediaIds
+                .Where(id => id != Guid.Empty)
+                .Distinct()
+                .ToList();
+
             var newMediaItems = await ValidateAndLoadMediaAsync(
                 userId,
-                request.MediaIds,
+                requestedMediaIds,
                 currentPostId: post.Id,
                 cancellationToken);
 
+            if (request.Title is not null)
+                post.Title = request.Title.Trim();
 
-            //Checks if anything else was updated
-            if (request.Title is not null) post.Title = request.Title.Trim();
-            if (request.Description is not null) post.Description = request.Description.Trim();
-            if (request.Weight.HasValue) post.Weight = request.Weight.Value;
-            if (request.Unit is not null) post.Unit = string.IsNullOrWhiteSpace(request.Unit) ? post.Unit : request.Unit.Trim();
+            if (request.Description is not null)
+                post.Description = request.Description.Trim();
 
-            var newMediaIds = newMediaItems.Select(m => m.Id).ToHashSet();
+            
+            post.Weight = request.Weight;
+
+            if (request.Unit is not null)
+                post.Unit = string.IsNullOrWhiteSpace(request.Unit)
+                    ? post.Unit
+                    : request.Unit.Trim();
+
+            var newMediaIds = newMediaItems
+                .Select(m => m.Id)
+                .ToHashSet();
+
+            var mediaOrder = requestedMediaIds
+                .Select((id, index) => new { id, index })
+                .ToDictionary(x => x.id, x => x.index);
 
             foreach (var existingMedia in post.MediaItems.ToList())
             {
                 if (!newMediaIds.Contains(existingMedia.Id))
                 {
-                    existingMedia.PostId = null;
-                    existingMedia.UpdatedAt = DateTime.UtcNow;
+                    await _mediaService.DeleteAsync(existingMedia.Id, userId, isAdmin: false);
+
                 }
             }
 
             foreach (var media in newMediaItems)
             {
-                if (media.PostId != post.Id)
-                {
-                    media.PostId = post.Id;
-                    media.UpdatedAt = DateTime.UtcNow;
-                }
+                media.PostId = post.Id;
+                media.SortOrder = mediaOrder[media.Id];
+                media.UpdatedAt = DateTime.UtcNow;
             }
 
-            //Save changed to database
             await _db.SaveChangesAsync(cancellationToken);
 
             var savedPost = await _db.Posts
@@ -164,10 +219,22 @@ namespace TallahasseePRs.Api.Services.PostServices
                 .Include(p => p.MediaItems)
                 .FirstAsync(p => p.Id == post.Id, cancellationToken);
 
-            //Saves comment count
-            var commentCount = await _db.Comments.CountAsync(c => c.Id == postId); //THIS WAS WEIRD, CHECK AGAIN FOR COMMENT FUNCTION
+            var commentCount = await _db.Comments
+                .AsNoTracking()
+                .CountAsync(c => c.PRPostId == postId, cancellationToken);
 
-            return ToResponse(savedPost, commentCount);
+            var profilePictureUrl = await GetProfilePictureUrlAsync(userId, cancellationToken);
+
+            var voteCount = await _db.Votes
+                .AsNoTracking()
+                .Where(v => v.PRPostId == postId && v.Value == VoteValue.Up)
+                .CountAsync(cancellationToken);
+
+            return ToResponse(
+                savedPost,
+                commentCount,
+                voteCount,
+                profilePictureUrl: profilePictureUrl);
         }
         public async Task<bool> DeleteAsync(Guid userId, Guid postId, bool isAdmin)
         {
@@ -183,12 +250,40 @@ namespace TallahasseePRs.Api.Services.PostServices
             //Delete media associated with it
             foreach(var m in post.MediaItems)
             {
-                await _mediaService.DeleteAsync(m.Id, userId);
+                await _mediaService.DeleteAsync(m.Id, userId, isAdmin);
             }
             //Removes from database
             _db.Posts.Remove(post);
             //Save changes
             await _db.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<bool> DeleteAsAdminAsync(Guid userId, Guid postId, string? comment)
+        {
+            //Fetches post and makes sure it exists
+            var post = await _db.Posts.Include(p => p.MediaItems).FirstOrDefaultAsync(p => p.Id == postId);
+
+            if (post is null) return false;
+
+            //Delete media associated with it
+            foreach (var m in post.MediaItems)
+            {
+                await _mediaService.DeleteAsync(m.Id, userId, true);
+            }
+            //Removes from database
+            _db.Posts.Remove(post);
+            //Save changes
+            await _db.SaveChangesAsync();
+
+            //Send notification
+            await _notificationService.CreateAsync(
+                recipientId: post.UserId,
+                actorId: userId,
+                type: NotificationType.PostDeletedByAdmin,
+                message: $"Your post '{post.Title}' was deleted by an administrator. Reason: {comment ?? "No reason provided."}"
+            );
+
             return true;
         }
 
@@ -217,20 +312,39 @@ namespace TallahasseePRs.Api.Services.PostServices
             );
 
 
-            var commentCount = await _db.Comments.CountAsync(c => c.Id == postId); 
-            return ToResponse(post, commentCount);
+            var commentCount = await _db.Comments
+                .CountAsync(c => c.PRPostId == postId);
+
+            var profilePictureUrl = await GetProfilePictureUrlAsync(post.UserId);
+            var voteCount = await _db.Votes
+                .AsNoTracking()
+                .Where(v => v.PRPostId == postId && v.Value == VoteValue.Up)
+                .CountAsync();
+
+            return ToResponse(
+                 post,
+                 commentCount,
+                 voteCount);
 
 
         }
 
-        private PostResponse ToResponse(PRPost p, int commentCount) 
+        private PostResponse ToResponse(
+           PRPost p,
+           int commentCount,
+           int voteCount = 0,
+           VoteValue? myVoteValue = null,
+           string? profilePictureUrl = null)
         {
             return new PostResponse
             {
                 Id = p.Id,
                 UserId = p.UserId,
                 LiftId = p.LiftId,
-                UserName = p.User.UserName,
+
+                UserName = p.User.UserName ?? "",
+                ProfilePictureUrl = profilePictureUrl,
+
                 Title = p.Title,
                 Description = p.Description,
                 Weight = p.Weight,
@@ -240,11 +354,15 @@ namespace TallahasseePRs.Api.Services.PostServices
                 JudgeNote = p.JudgeNote,
                 JudgedAt = p.JudgedAt,
                 CreatedAt = p.CreatedAt,
-                CommentCount = commentCount,
 
-                 Media = p.MediaItems
+                CommentCount = commentCount,
+                VoteCount = voteCount,
+                MyVoteValue = myVoteValue,
+
+                Media = p.MediaItems
                     .Where(m => m.Status == MediaStatus.Ready)
-                    .OrderBy(m => m.CreatedAt)
+                    .OrderBy(m => m.SortOrder)
+                    .ThenBy(m => m.CreatedAt)
                     .Select(m => new MediaResponse
                     {
                         Id = m.Id,
@@ -263,7 +381,21 @@ namespace TallahasseePRs.Api.Services.PostServices
                         CreatedAt = m.CreatedAt
                     })
                     .ToList()
-                    };
+            };
+        }
+
+        private async Task<string?> GetProfilePictureUrlAsync(
+            Guid userId,
+            CancellationToken cancellationToken = default)
+        {
+            var profile = await _db.Profiles
+                .AsNoTracking()
+                .Include(p => p.ProfilePicture)
+                .FirstOrDefaultAsync(p => p.UserId == userId, cancellationToken);
+
+            return profile?.ProfilePicture != null
+                ? _storage.GetPublicUrl(profile.ProfilePicture.ObjectKey)
+                : null;
         }
 
         private async Task<List<Models.Media>> ValidateAndLoadMediaAsync(

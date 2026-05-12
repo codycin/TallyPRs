@@ -8,9 +8,8 @@ public class AppDbContextFactory : IDesignTimeDbContextFactory<AppDbContext>
 {
     public AppDbContext CreateDbContext(string[] args)
     {
-        // Build configuration exactly the way EF CLI needs it
         var configuration = new ConfigurationBuilder()
-            .SetBasePath(Directory.GetCurrentDirectory())     // IMPORTANT
+            .SetBasePath(Directory.GetCurrentDirectory())     
             .AddJsonFile("appsettings.json", optional: false)
             .AddJsonFile("appsettings.Development.json", optional: true)
             .AddEnvironmentVariables()

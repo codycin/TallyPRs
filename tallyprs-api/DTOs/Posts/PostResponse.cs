@@ -11,6 +11,7 @@ namespace TallahasseePRs.Api.DTOs.Posts
 
         public string Title { get; set; } = "";
         public string UserName { get; set; } = "";
+        public string? ProfilePictureUrl { get; set; }
         public string Description { get; set; } = "";
 
         public decimal? Weight { get; set; } = 0;

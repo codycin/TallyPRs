@@ -19,52 +19,50 @@ export default function HomeFeedClient() {
   }
 
   return (
-    <>
-      <div className="bg-white">
-        <div className="sticky top-0 z-20 flex justify-center border-b border-gray-100 bg-white/80 py-2 backdrop-blur">
-          {" "}
-          <div className="flex rounded-full border border-gray-200 bg-gray-50 p-1">
-            <button
-              onClick={() => changeTab("Following")}
-              className={`rounded-full px-3 py-1 text-xs font-medium transition ${
-                activeTab === "Following"
-                  ? "bg-black text-white"
-                  : "text-gray-500 hover:text-black"
-              }`}
-            >
-              Following
-            </button>
+    <div className="min-h-screen bg-black">
+      <div className="sticky top-0 z-20 flex justify-center border-b border-zinc-900 bg-black/90 py-3 backdrop-blur">
+        <div className="flex rounded-full border border-zinc-800 bg-zinc-950 p-1 shadow-lg shadow-black/20">
+          <button
+            onClick={() => changeTab("Following")}
+            className={`rounded-full px-4 py-1.5 text-xs font-semibold transition ${
+              activeTab === "Following"
+                ? "bg-zinc-100 text-zinc-950"
+                : "text-zinc-500 hover:text-zinc-100"
+            }`}
+          >
+            Following
+          </button>
 
-            <button
-              onClick={() => changeTab("Global")}
-              className={`rounded-full px-3 py-1 text-xs font-medium transition ${
-                activeTab === "Global"
-                  ? "bg-black text-white"
-                  : "text-gray-500 hover:text-black"
-              }`}
-            >
-              Global
-            </button>
-          </div>
+          <button
+            onClick={() => changeTab("Global")}
+            className={`rounded-full px-4 py-1.5 text-xs font-semibold transition ${
+              activeTab === "Global"
+                ? "bg-zinc-100 text-zinc-950"
+                : "text-zinc-500 hover:text-zinc-100"
+            }`}
+          >
+            Global
+          </button>
         </div>
-        {activeTab === "Following" ? (
-          <Feed<PostResponse>
-            fetchPage={(cursor) => getPostFeed("Following", 20, cursor)}
-            getKey={(post) => post.id}
-            renderItem={(post, { removeItem }) => (
-              <PostCard post={post} onDeleted={removeItem} />
-            )}
-          />
-        ) : (
-          <Feed<PostResponse>
-            fetchPage={(cursor) => getPostFeed("Global", 20, cursor)}
-            getKey={(post) => post.id}
-            renderItem={(post, { removeItem }) => (
-              <PostCard post={post} onDeleted={removeItem} />
-            )}
-          />
-        )}
       </div>
-    </>
+
+      {activeTab === "Following" ? (
+        <Feed<PostResponse>
+          fetchPage={(cursor) => getPostFeed("Following", 20, cursor)}
+          getKey={(post) => post.id}
+          renderItem={(post, { removeItem }) => (
+            <PostCard post={post} onDeleted={removeItem} />
+          )}
+        />
+      ) : (
+        <Feed<PostResponse>
+          fetchPage={(cursor) => getPostFeed("Global", 20, cursor)}
+          getKey={(post) => post.id}
+          renderItem={(post, { removeItem }) => (
+            <PostCard post={post} onDeleted={removeItem} />
+          )}
+        />
+      )}
+    </div>
   );
 }

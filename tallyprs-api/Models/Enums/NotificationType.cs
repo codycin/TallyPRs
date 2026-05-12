@@ -6,7 +6,8 @@
         UpVote = 2,
         Comment = 3,
         PostApproved = 4,
-        PostRejected = 5
+        PostRejected = 5,
+        PostDeletedByAdmin = 6,
 
     }
 }

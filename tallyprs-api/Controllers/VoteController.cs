@@ -11,7 +11,7 @@ namespace TallahasseePRs.Api.Controllers
 {
     [ApiController]
     [Route("api")]
-    [Authorize] // require JWT
+    [Authorize] 
     public sealed class VoteController : ControllerBase
     {
         private readonly ICurrentUserService _currentUser;
@@ -23,7 +23,7 @@ namespace TallahasseePRs.Api.Controllers
             _currentUser = currentUser;
         }
 
-        //POST
+        
         [HttpPost("posts/{postId:guid}/votes")]
         [EnableRateLimiting("writes")]
         public async Task<ActionResult<VoteResponse>> AddVote(
@@ -37,7 +37,7 @@ namespace TallahasseePRs.Api.Controllers
 
 
       
-        [AllowAnonymous] // optional: allow viewing without auth
+        [AllowAnonymous] 
         [HttpGet("posts/{postId:guid}/votes")]
         public async Task<ActionResult<List<VoteResponse>>> GetForPost([FromRoute] Guid postId)
         {

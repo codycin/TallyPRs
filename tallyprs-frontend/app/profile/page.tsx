@@ -46,7 +46,7 @@ export default function ProfilePage() {
   if (isLoading) {
     return (
       <main className="min-h-screen bg-black text-white">
-        <div className="mx-auto flex min-h-screen w-full max-w-2xl items-center justify-center bg-black md:my-8 md:min-h-[400px] md:rounded-3xl md:shadow-xl">
+        <div className="mx-auto flex min-h-screen w-full max-w-2xl items-center justify-center bg-black md:my-8 md:min-h-100 md:rounded-3xl md:shadow-xl">
           <div className="flex items-center gap-3 text-sm text-gray-300">
             <BiLoaderAlt className="animate-spin" size={20} />
             Loading profile...
@@ -144,7 +144,7 @@ export default function ProfilePage() {
               <p className="text-xs uppercase tracking-wide text-gray-400">
                 Measurements JSON
               </p>
-              <pre className="mt-2 whitespace-pre-wrap break-words text-sm text-white">
+              <pre className="mt-2 whitespace-pre-wrap wrap-break-words text-sm text-white">
                 {profile?.measurementsJson || "Not set"}
               </pre>
             </div>

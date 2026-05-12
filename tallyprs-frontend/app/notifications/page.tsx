@@ -82,12 +82,15 @@ export default function NotificationsPage() {
   const unreadCount = notifications.filter((n) => !n.isRead).length;
 
   return (
-    <main className="min-h-screen bg-gray-50 px-4 py-8">
+    <main className="min-h-screen bg-black px-4 py-8 text-zinc-50">
       <section className="mx-auto max-w-3xl">
         <div className="mb-6 flex items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Notifications</h1>
-            <p className="mt-1 text-sm text-gray-600">
+            <h1 className="text-3xl font-bold tracking-tight text-zinc-50">
+              Notifications
+            </h1>
+
+            <p className="mt-1 text-sm text-zinc-500">
               {unreadCount > 0
                 ? `${unreadCount} unread notification${unreadCount === 1 ? "" : "s"}`
                 : "You're all caught up."}
@@ -98,30 +101,31 @@ export default function NotificationsPage() {
             type="button"
             onClick={handleMarkAllRead}
             disabled={markingAll || unreadCount === 0}
-            className="rounded-full border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-800 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-full border border-zinc-700 bg-zinc-950 px-4 py-2 text-sm font-medium text-zinc-300 transition hover:border-zinc-500 hover:bg-zinc-900 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
           >
             {markingAll ? "Updating..." : "Mark all read"}
           </button>
         </div>
 
         {loading && (
-          <div className="rounded-2xl border border-gray-200 bg-white p-6 text-sm text-gray-500 shadow-sm">
+          <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-6 text-sm text-zinc-500 shadow-lg shadow-black/20">
             Loading notifications...
           </div>
         )}
 
         {error && (
-          <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          <div className="mb-4 rounded-2xl border border-rose-900/70 bg-rose-950/40 p-4 text-sm text-rose-300">
             {error}
           </div>
         )}
 
         {!loading && notifications.length === 0 && (
-          <div className="rounded-2xl border border-gray-200 bg-white p-8 text-center shadow-sm">
-            <h2 className="text-lg font-semibold text-gray-900">
+          <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-8 text-center shadow-lg shadow-black/20">
+            <h2 className="text-lg font-semibold text-zinc-100">
               No notifications yet
             </h2>
-            <p className="mt-2 text-sm text-gray-500">
+
+            <p className="mt-2 text-sm text-zinc-500">
               Comments, replies, follows, and post updates will appear here.
             </p>
           </div>
@@ -158,17 +162,17 @@ function NotificationCard({
   return (
     <div
       className={[
-        "rounded-2xl border p-4 shadow-sm transition",
+        "rounded-2xl border p-4 shadow-lg shadow-black/20 transition",
         notification.isRead
-          ? "border-gray-200 bg-white"
-          : "border-blue-200 bg-blue-50",
+          ? "border-zinc-800 bg-zinc-950 hover:border-zinc-700"
+          : "border-sky-800/70 bg-sky-950/30 hover:border-sky-700",
       ].join(" ")}
     >
       <div className="flex items-start gap-3">
         <div
           className={[
             "mt-2 h-2.5 w-2.5 shrink-0 rounded-full",
-            notification.isRead ? "bg-gray-300" : "bg-blue-600",
+            notification.isRead ? "bg-zinc-700" : "bg-sky-400",
           ].join(" ")}
         />
 
@@ -180,9 +184,9 @@ function NotificationCard({
                 void onMarkRead(notification.id, true);
               }
             }}
-            className="block text-sm text-gray-900 hover:underline"
+            className="block text-sm text-zinc-300 hover:text-white hover:underline"
           >
-            <span className="font-semibold">
+            <span className="font-semibold text-zinc-100">
               {notification.actorUsername
                 ? `@${notification.actorUsername}`
                 : "System"}
@@ -190,7 +194,7 @@ function NotificationCard({
             <span>{notification.message}</span>
           </Link>
 
-          <p className="mt-1 text-xs text-gray-500">
+          <p className="mt-1 text-xs text-zinc-500">
             {formatNotificationDate(notification.createdAt)}
           </p>
         </div>
@@ -199,7 +203,7 @@ function NotificationCard({
           type="button"
           disabled={updating}
           onClick={() => onMarkRead(notification.id, !notification.isRead)}
-          className="rounded-full border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
+          className="shrink-0 rounded-full border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-xs font-medium text-zinc-300 transition hover:border-zinc-500 hover:bg-zinc-800 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
         >
           {updating
             ? "Updating..."
