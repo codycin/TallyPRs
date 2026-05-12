@@ -83,7 +83,7 @@ namespace TallahasseePRs.Api.Controllers
         {
             var userId = _currentUserService.GetUserId();
 
-            await _mediaService.DeleteAsync(userId,id, cancellationToken);
+            await _mediaService.DeleteAsync(userId,id,false, cancellationToken);
 
             return NoContent();
         }

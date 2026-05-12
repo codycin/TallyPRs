@@ -2,13 +2,13 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { registerUser, loginUser } from "@/services/authService";
+import { registerUser } from "@/services/authService";
 import { useAuth } from "@/lib/auth/authContext";
 
 export default function RegisterPage() {
   const router = useRouter();
 
-  const { login } = useAuth(); // <--- Moved this out of handleSubmit!
+  const { login } = useAuth();
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");

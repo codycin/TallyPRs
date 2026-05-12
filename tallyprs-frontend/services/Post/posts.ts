@@ -1,8 +1,8 @@
 import { apiFetch } from "../apiClient";
-import { CreatePostRequest } from "@/types/post";
+import { CreatePostRequest, PostResponse } from "@/types/post";
 
-export async function getPosts() {
-  const response = await apiFetch(`/posts`, {
+export async function getPostById(postId: string): Promise<PostResponse> {
+  const response = await apiFetch(`/posts/${postId}`, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
@@ -11,7 +11,7 @@ export async function getPosts() {
   });
 
   if (!response.ok) {
-    throw new Error("Failed to fetch posts");
+    throw new Error("Failed to fetch post");
   }
 
   return response.json();
@@ -58,6 +58,21 @@ export async function deletePost(postId: string) {
     throw new Error(text || "Failed to delete post.");
   }
   return text;
+}
+export async function deletePostAsAdmin(postId: string, comment: string) {
+  const response = await apiFetch(`/posts/${postId}/admin`, {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ comment }),
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    console.error("Delete post failed:", text);
+    throw new Error(text || "Failed to delete post.");
+  }
 }
 
 export async function updatePost(postId: string, request: CreatePostRequest) {

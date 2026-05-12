@@ -215,10 +215,20 @@ namespace TallahasseePRs.Api.Services.Media
         }
 
 
-        public async Task DeleteAsync(Guid mediaId, Guid userId, CancellationToken cancellationToken = default)
+        public async Task DeleteAsync(Guid mediaId, Guid userId, bool isAdmin, CancellationToken cancellationToken = default)
         {
-            var media = await _db.Media
+            Models.Media? media;
+            if(isAdmin)
+            {
+                media = await _db.Media
+                .FirstOrDefaultAsync(m => m.Id == mediaId , cancellationToken);
+            }
+            else
+            {
+                media = await _db.Media
                 .FirstOrDefaultAsync(m => m.Id == mediaId && m.OwnerId == userId, cancellationToken);
+            }
+            
 
             var mediaDebug = await _db.Media
                 .AsNoTracking()

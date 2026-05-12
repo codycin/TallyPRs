@@ -15,7 +15,7 @@ namespace TallahasseePRs.Api.Services.Media
 
         Task<MediaResponse?> MarkUploadCompleteAsync(Guid mediaId, Guid userId, CancellationToken cancellationToken = default);
 
-        Task DeleteAsync(Guid mediaId, Guid userId, CancellationToken cancellationToken= default);
+        Task DeleteAsync(Guid mediaId, Guid userId, bool isAdmin, CancellationToken cancellationToken= default);
         Task DeleteAsAdminAsync(Guid mediaId, CancellationToken cancellationToken = default);
 
     }

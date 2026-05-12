@@ -4,7 +4,7 @@ import { useAuth } from "@/lib/auth/authContext";
 import { useRouter } from "next/navigation";
 
 export default function SettingsPage() {
-  const { isLoggedIn, logout } = useAuth();
+  const { logout } = useAuth();
   const router = useRouter();
 
   function logoutClicked() {

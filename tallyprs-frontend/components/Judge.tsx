@@ -13,7 +13,6 @@ type Props = {
 
 export default function Judge({ post, onDeleted, onJudged }: Props) {
   const [formOpen, setFormOpen] = useState(false);
-  const [formBody, setNewBody] = useState("");
   const [judgeSubmitting, setJudgeSubmitting] = useState(false);
 
   const [currentJudgeNote, setCurrentJudgeNote] = useState(
@@ -50,24 +49,24 @@ export default function Judge({ post, onDeleted, onJudged }: Props) {
   }
 
   return (
-    <div className="mt-4 rounded-2xl border border-gray-200 bg-white p-4 text-black shadow-sm">
-      <div className="mb-4 flex items-center justify-between">
+    <div className="mt-4 rounded-2xl border border-zinc-800 bg-zinc-950 p-4 text-zinc-100 shadow-lg shadow-black/20">
+      <div className="mb-4 flex items-start justify-between gap-3">
         <div>
-          <h2 className="text-sm font-semibold tracking-wide text-gray-900">
+          <h2 className="text-sm font-semibold tracking-wide text-zinc-100">
             Admin Review
           </h2>
-          <p className="text-xs text-gray-500">
+          <p className="mt-0.5 text-xs text-zinc-500">
             Update the post status and leave a note.
           </p>
         </div>
 
         <div
-          className={`rounded-full px-3 py-1 text-xs font-medium ${
+          className={`shrink-0 rounded-full border px-3 py-1 text-xs font-semibold ${
             currentStatus === 1
-              ? "bg-green-100 text-green-700"
+              ? "border-emerald-800/70 bg-emerald-950/40 text-emerald-300"
               : currentStatus === 2
-                ? "bg-red-100 text-red-700"
-                : "bg-yellow-100 text-yellow-700"
+                ? "border-rose-800/70 bg-rose-950/40 text-rose-300"
+                : "border-amber-800/70 bg-amber-950/40 text-amber-300"
           }`}
         >
           {currentStatus === 1
@@ -82,7 +81,7 @@ export default function Judge({ post, onDeleted, onJudged }: Props) {
         <div className="flex flex-col gap-2">
           <label
             htmlFor="judgeNote"
-            className="text-xs font-medium uppercase tracking-wide text-gray-500"
+            className="text-xs font-medium uppercase tracking-wide text-zinc-500"
           >
             Judge Note
           </label>
@@ -93,14 +92,14 @@ export default function Judge({ post, onDeleted, onJudged }: Props) {
             onChange={(e) => setCurrentJudgeNote(e.target.value)}
             placeholder="Leave feedback or reasoning..."
             rows={4}
-            className="resize-none rounded-xl border border-gray-300 bg-gray-50 p-3 text-sm text-black outline-none transition focus:border-blue-500 focus:bg-white"
+            className="resize-none rounded-xl border border-zinc-800 bg-zinc-900 p-3 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-500 focus:border-sky-700 focus:bg-zinc-950 focus:ring-4 focus:ring-sky-950"
           />
         </div>
 
         <div className="flex flex-col gap-2">
           <label
             htmlFor="status"
-            className="text-xs font-medium uppercase tracking-wide text-gray-500"
+            className="text-xs font-medium uppercase tracking-wide text-zinc-500"
           >
             Status
           </label>
@@ -109,11 +108,17 @@ export default function Judge({ post, onDeleted, onJudged }: Props) {
             id="status"
             value={currentStatus}
             onChange={(e) => setCurrentStatus(parseInt(e.target.value))}
-            className="rounded-xl border border-gray-300 bg-gray-50 p-3 text-sm text-black outline-none transition focus:border-blue-500 focus:bg-white"
+            className="rounded-xl border border-zinc-800 bg-zinc-900 p-3 text-sm text-zinc-100 outline-none transition focus:border-sky-700 focus:bg-zinc-950 focus:ring-4 focus:ring-sky-950"
           >
-            <option value={0}>Pending</option>
-            <option value={1}>Approved</option>
-            <option value={2}>Rejected</option>
+            <option className="bg-zinc-950 text-zinc-100" value={0}>
+              Pending
+            </option>
+            <option className="bg-zinc-950 text-zinc-100" value={1}>
+              Approved
+            </option>
+            <option className="bg-zinc-950 text-zinc-100" value={2}>
+              Rejected
+            </option>
           </select>
         </div>
       </div>
@@ -121,7 +126,7 @@ export default function Judge({ post, onDeleted, onJudged }: Props) {
       <button
         onClick={submitJudge}
         disabled={judgeSubmitting}
-        className="mt-5 w-full rounded-xl bg-black px-4 py-3 text-sm font-semibold text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
+        className="mt-5 w-full rounded-xl bg-zinc-100 px-4 py-3 text-sm font-semibold text-zinc-950 transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
       >
         {judgeSubmitting ? "Submitting..." : "Save Review"}
       </button>

@@ -3,19 +3,16 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { BiUser, BiLoaderAlt } from "react-icons/bi";
-
 import { getPublicProfile } from "@/services/Profile/profile";
 import { PublicProfileResponse } from "@/types/profile";
-
 import { followUser, unfollowUser } from "@/services/Follow/followService";
-import { followRequest, followResponse } from "@/types/follow";
-
 import Feed from "@/components/Feed";
 import PostCard from "@/components/PostCard";
 import { getUserPostFeed } from "@/services/Feed/feedService";
 import type { PostResponse } from "@/types/post";
 
 export default function PublicProfilePage() {
+  //Route params
   const params = useParams();
   const userId = params?.userid as string | undefined;
 

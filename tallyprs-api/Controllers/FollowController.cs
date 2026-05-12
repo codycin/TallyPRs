@@ -28,12 +28,12 @@ namespace TallahasseePRs.Api.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<FollowResponse>> Create([FromBody] FollowRequest request) //Creat from JSON body, with a request
+        public async Task<ActionResult<FollowResponse>> Create([FromBody] FollowRequest request) 
         {
             try
             {
                 var result = await _follow.FollowAsync(_currentUser.GetUserId(), request);
-                // 201 Created is nice; you can also just return Ok(result)
+                
                 return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
             }
             catch (KeyNotFoundException ex) { return NotFound(new { message = ex.Message }); }

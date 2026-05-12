@@ -42,7 +42,7 @@ namespace TallahasseePRs.Api.Services.ProfileServices
 
             if (profile == null) return null;
 
-            // Null = don't change semantics
+            // Null = don't change 
             if (request.DisplayName is not null)
                 profile.DisplayName = request.DisplayName.Trim();
 

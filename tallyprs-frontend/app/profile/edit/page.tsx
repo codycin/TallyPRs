@@ -2,12 +2,10 @@
 
 import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
 import { BiImageAdd, BiLoaderAlt, BiUser, BiX } from "react-icons/bi";
-
 import { getProfile, updateProfile } from "@/services/Profile/profile";
 import { uploadSingleMedia } from "@/services/mediaService";
 import { MediaPurpose } from "@/types/media";
 import { UpdateProfileRequest, UserProfileResponse } from "@/types/profile";
-
 import { useRouter } from "next/navigation";
 
 type SelectedFile = {
@@ -149,12 +147,7 @@ export default function EditProfilePage() {
         measurementsJson: measurementsJson.trim() || null,
       };
 
-      console.log("profilePictureId being sent:", payload.profilePictureId);
-      console.log("UpdateProfile payload:", payload);
-      console.log("UpdateProfile JSON:", JSON.stringify(payload));
-
       const updated = await updateProfile(payload);
-      console.log("updated profile response:", updated);
       setProfile(updated);
 
       setDisplayName(updated.displayName ?? "");

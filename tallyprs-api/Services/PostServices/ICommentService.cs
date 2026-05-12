@@ -9,7 +9,7 @@ namespace TallahasseePRs.Api.Services.PostServices
 
         Task<List<CommentResponse>> GetThreadForPostAsync(Guid PostId);
 
-        Task DeleteAsync(Guid CommentID, Guid RequestingUserId);
+        Task DeleteAsync(Guid CommentID, Guid RequestingUserId, bool IsAdmin);
 
 
 

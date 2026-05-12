@@ -7,6 +7,7 @@ export type PostResponse = {
 
   title: string;
   description: string;
+  profilePictureUrl?: string | null;
 
   weight: number;
   unit: string;

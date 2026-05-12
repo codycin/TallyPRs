@@ -11,7 +11,7 @@ namespace TallahasseePRs.Api.Controllers
 {
     [ApiController]
     [Route("api")]
-    [Authorize] // require JWT
+    [Authorize] 
     public class CommentsController : ControllerBase
     {
         private readonly ICommentService _comments;
@@ -23,7 +23,7 @@ namespace TallahasseePRs.Api.Controllers
             _currentUser = currentUser;
         }
 
-        // POST /api/posts/{postId}/comments
+        
         [HttpPost("posts/{postId:guid}/comments")]
         [EnableRateLimiting("writes")]
         public async Task<ActionResult<CommentResponse>> CreateTopLevel(
@@ -35,7 +35,6 @@ namespace TallahasseePRs.Api.Controllers
             return Ok(created);
         }
 
-        // POST /api/posts/{postId}/comments/{parentCommentId}/replies
         [HttpPost("posts/{postId:guid}/comments/{parentCommentId:guid}/replies")]
         [EnableRateLimiting("writes")]
         public async Task<ActionResult<CommentResponse>> Reply(
@@ -48,8 +47,7 @@ namespace TallahasseePRs.Api.Controllers
             return Ok(created);
         }
 
-        // GET /api/posts/{postId}/comments
-        [AllowAnonymous] // optional: allow viewing without auth
+        [AllowAnonymous] 
         [HttpGet("posts/{postId:guid}/comments")]
         public async Task<ActionResult<List<CommentResponse>>> GetForPost([FromRoute] Guid postId)
         {
@@ -57,12 +55,14 @@ namespace TallahasseePRs.Api.Controllers
             return Ok(thread);
         }
 
-        // DELETE /api/comments/{commentId}
+        
         [HttpDelete("comments/{commentId:guid}")]
         public async Task<IActionResult> Delete([FromRoute] Guid commentId)
         {
             var userId = _currentUser.GetUserId();
-            await _comments.DeleteAsync(commentId, userId);
+            var isAdmin = User.IsInRole("Admin"); 
+
+            await _comments.DeleteAsync(commentId, userId, isAdmin);
             return NoContent();
         }
     }

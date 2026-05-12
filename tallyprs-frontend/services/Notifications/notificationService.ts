@@ -1,8 +1,4 @@
-import {
-  NotificationReadRequest,
-  NotificationResponse,
-  NotificationType,
-} from "@/types/notification";
+import { NotificationResponse } from "@/types/notification";
 import { apiFetch } from "../apiClient";
 
 export async function getNotifications(): Promise<NotificationResponse[]> {

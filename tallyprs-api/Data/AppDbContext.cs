@@ -26,9 +26,6 @@ public class AppDbContext : DbContext
     {
         base.OnModelCreating(modelBuilder);
 
-        // USER
-        // Map the C# property `UserName` to the actual DB column name (example: "username")
-
 
         modelBuilder.Entity<User>()
             .HasIndex(u => u.Email)
@@ -94,8 +91,8 @@ public class AppDbContext : DbContext
             .OnDelete(DeleteBehavior.Cascade);
 
         modelBuilder.Entity<Vote>()
-            .HasIndex(v => new { v.PRPostId, v.UserId })
-            .IsUnique();
+      .HasIndex(v => new { v.PRPostId, v.UserId })
+      .IsUnique();
 
         // FOLLOWS
         modelBuilder.Entity<Follow>()
@@ -112,15 +109,19 @@ public class AppDbContext : DbContext
 
         // REFRESH TOKENS
         modelBuilder.Entity<RefreshToken>()
-            .HasOne(r => r.User)
-            .WithMany(u => u.RefreshTokens)
-            .HasForeignKey(r => r.UserId)
-            .OnDelete(DeleteBehavior.Cascade);
+         .HasOne(r => r.User)
+         .WithMany(u => u.RefreshTokens)
+         .HasForeignKey(r => r.UserId)
+         .OnDelete(DeleteBehavior.Cascade);
+
         modelBuilder.Entity<RefreshToken>()
             .HasIndex(r => r.TokenHash)
             .IsUnique();
 
-        //Notifications
+        modelBuilder.Entity<RefreshToken>()
+            .HasIndex(r => r.UserId);
+
+        // NOTIFICATIONS
         modelBuilder.Entity<Notification>(entity =>
         {
             entity.HasKey(n => n.Id);
@@ -158,7 +159,7 @@ public class AppDbContext : DbContext
                 .HasForeignKey(n => n.CommentId)
                 .OnDelete(DeleteBehavior.SetNull);
         });
-        //Media
+        // MEDIA
         modelBuilder.Entity<Media>(entity =>
         {
             entity.HasKey(m => m.Id);
@@ -211,11 +212,71 @@ public class AppDbContext : DbContext
                 .HasForeignKey(m => m.CommentId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            entity.HasOne(m => m.Post)
-                .WithMany(p => p.MediaItems)
-                .HasForeignKey(m => m.PostId)
-                .OnDelete(DeleteBehavior.Cascade);
         });
+
+
+        //Indexing
+
+        // POSTS 
+        modelBuilder.Entity<PRPost>()
+            .HasIndex(p => new { p.CreatedAt, p.Id });
+
+        modelBuilder.Entity<PRPost>()
+            .HasIndex(p => new { p.UserId, p.CreatedAt, p.Id });
+
+        modelBuilder.Entity<PRPost>()
+            .HasIndex(p => p.LiftId);
+
+        modelBuilder.Entity<PRPost>()
+            .HasIndex(p => p.Status);
+
+        // COMMENTS 
+        modelBuilder.Entity<Comment>()
+            .HasIndex(c => c.PRPostId);
+
+        modelBuilder.Entity<Comment>()
+            .HasIndex(c => c.UserId);
+
+        modelBuilder.Entity<Comment>()
+            .HasIndex(c => c.ParentCommentId);
+
+        // VOTES 
+        modelBuilder.Entity<Vote>()
+            .HasIndex(v => v.PRPostId);
+
+
+        // FOLLOWS 
+        modelBuilder.Entity<Follow>()
+            .HasIndex(f => f.FollowerId);
+
+        modelBuilder.Entity<Follow>()
+            .HasIndex(f => f.FollowedId);
+
+        modelBuilder.Entity<Follow>()
+            .HasIndex(f => new { f.FollowerId, f.FollowedId })
+            .IsUnique();
+
+        // NOTIFICATIONS 
+        modelBuilder.Entity<Notification>()
+            .HasIndex(n => new { n.RecipientId, n.IsRead, n.CreatedAt });
+
+        modelBuilder.Entity<Notification>()
+            .HasIndex(n => n.PostId);
+
+        modelBuilder.Entity<Notification>()
+            .HasIndex(n => n.CommentId);
+
+        // LIFTS 
+        modelBuilder.Entity<Lift>()
+            .HasIndex(l => l.Name);
+
+        modelBuilder.Entity<Lift>()
+            .HasIndex(l => l.Category);
+
+        // PROFILES 
+        modelBuilder.Entity<Profile>()
+            .HasIndex(p => p.DisplayName);
+
     }
 
 
