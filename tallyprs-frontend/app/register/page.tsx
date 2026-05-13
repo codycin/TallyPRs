@@ -4,6 +4,15 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { registerUser } from "@/services/authService";
 import { useAuth } from "@/lib/auth/authContext";
+import Link from "next/link";
+import {
+  BiEnvelope,
+  BiUser,
+  BiLockAlt,
+  BiLogIn,
+  BiUserPlus,
+  BiErrorCircle,
+} from "react-icons/bi";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -43,49 +52,85 @@ export default function RegisterPage() {
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center p-6">
+    <main className="min-h-screen flex items-center justify-center bg-black px-6 py-12 text-white">
       <form
         onSubmit={handleSubmit}
-        className="w-full max-w-md space-y-4 border rounded p-6"
+        className="w-full max-w-md rounded-2xl border border-white/10 bg-zinc-950 p-8 shadow-2xl shadow-black/40"
       >
-        <h1 className="text-2xl font-bold">Register</h1>
+        <div className="mb-8 text-center">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-red-500/10 text-red-400">
+            <BiUserPlus className="text-3xl" />
+          </div>
 
-        <input
-          className="w-full border rounded p-2"
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-        />
+          <h1 className="text-3xl font-bold tracking-tight">Create Account</h1>
+          <p className="mt-2 text-sm text-zinc-400">
+            Join TallyPRs and start tracking your lifts.
+          </p>
+        </div>
 
-        <input
-          className="w-full border rounded p-2"
-          type="text"
-          placeholder="Username"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          required
-        />
+        <div className="space-y-4">
+          <div className="relative">
+            <BiEnvelope className="absolute left-3 top-1/2 -translate-y-1/2 text-xl text-zinc-500" />
+            <input
+              className="w-full rounded-xl border border-white/10 bg-black px-11 py-3 text-sm text-white outline-none transition placeholder:text-zinc-600 focus:border-red-500/60 focus:ring-2 focus:ring-red-500/10"
+              type="email"
+              placeholder="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </div>
 
-        <input
-          className="w-full border rounded p-2"
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
+          <div className="relative">
+            <BiUser className="absolute left-3 top-1/2 -translate-y-1/2 text-xl text-zinc-500" />
+            <input
+              className="w-full rounded-xl border border-white/10 bg-black px-11 py-3 text-sm text-white outline-none transition placeholder:text-zinc-600 focus:border-red-500/60 focus:ring-2 focus:ring-red-500/10"
+              type="text"
+              placeholder="Username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              required
+            />
+          </div>
 
-        {error && <p className="text-red-600">{error}</p>}
+          <div className="relative">
+            <BiLockAlt className="absolute left-3 top-1/2 -translate-y-1/2 text-xl text-zinc-500" />
+            <input
+              className="w-full rounded-xl border border-white/10 bg-black px-11 py-3 text-sm text-white outline-none transition placeholder:text-zinc-600 focus:border-red-500/60 focus:ring-2 focus:ring-red-500/10"
+              type="password"
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </div>
+        </div>
+
+        {error && (
+          <div className="mt-4 flex items-start gap-2 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-300">
+            <BiErrorCircle className="mt-0.5 shrink-0 text-lg" />
+            <p>{error}</p>
+          </div>
+        )}
 
         <button
           type="submit"
           disabled={loading}
-          className="w-full border rounded p-2 font-medium"
+          className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-red-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-red-400 disabled:cursor-not-allowed disabled:opacity-60"
         >
+          <BiUserPlus className="text-xl" />
           {loading ? "Creating account..." : "Register"}
         </button>
+
+        <p className="mt-6 text-center text-sm text-zinc-500">
+          Already have an account?{" "}
+          <Link
+            href="/login"
+            className="font-medium text-red-400 hover:text-red-300"
+          >
+            Login
+          </Link>
+        </p>
       </form>
     </main>
   );

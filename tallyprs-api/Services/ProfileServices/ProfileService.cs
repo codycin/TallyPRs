@@ -7,6 +7,7 @@ using TallahasseePRs.Api.DTOs.Profiles;
 using TallahasseePRs.Api.Models;
 using TallahasseePRs.Api.Models.Users;
 using TallahasseePRs.Api.Services.FollowServices;
+using TallahasseePRs.Api.Services.Media;
 using TallahasseePRs.Api.Services.Storage;
 
 namespace TallahasseePRs.Api.Services.ProfileServices
@@ -17,13 +18,15 @@ namespace TallahasseePRs.Api.Services.ProfileServices
         private readonly IObjectStorage _storage;
         private readonly IFollowService _follow;
         private readonly ICurrentUserService _currentUser;
+        private readonly IMediaService _media;
 
-        public ProfileService(AppDbContext appDbContext, IObjectStorage storage, IFollowService followService, ICurrentUserService cs)
+        public ProfileService(AppDbContext appDbContext, IObjectStorage storage, IFollowService followService, ICurrentUserService cs, IMediaService ms)
         {
             _db = appDbContext;
             _storage = storage;
             _follow = followService;
             _currentUser = cs;
+            _media = ms;
         }
         public async Task<ProfileResponse?> GetByIdAsync(Guid userId)
         {
@@ -46,8 +49,12 @@ namespace TallahasseePRs.Api.Services.ProfileServices
             if (request.DisplayName is not null)
                 profile.DisplayName = request.DisplayName.Trim();
 
-            if (request.RemoveProfilePicture)
+            if (request.RemoveProfilePicture && profile.ProfilePictureId.HasValue)
+            {
+                await _media.DeleteAsync(profile.ProfilePictureId.Value, profile.UserId, false);
                 profile.ProfilePictureId = null;
+
+            }
             else if(request.ProfilePictureId.HasValue)
             {
                 var media = await _db.Media.SingleOrDefaultAsync(m => m.Id == request.ProfilePictureId.Value);

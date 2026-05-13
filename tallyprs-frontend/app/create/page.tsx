@@ -562,73 +562,116 @@ export default function CreatePostPage() {
         </form>
       </div>
       {cropImageSrc && editingIndex !== null && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90">
-          <div className="relative h-[80vh] w-full max-w-lg">
-            <Cropper
-              image={cropImageSrc}
-              crop={crop}
-              zoom={zoom}
-              aspect={4 / 5}
-              onCropChange={setCrop}
-              onZoomChange={setZoom}
-              onCropComplete={(_, croppedPixels) => {
-                setCroppedAreaPixels(croppedPixels);
-              }}
-            />
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 px-4">
+          <div className="relative h-[80vh] w-full max-w-lg overflow-hidden rounded-3xl border border-zinc-800 bg-zinc-950 shadow-2xl">
+            <div className="absolute left-0 right-0 top-0 z-10 border-b border-zinc-800 bg-black/80 px-4 py-3 backdrop-blur">
+              <h2 className="text-sm font-semibold text-white">Crop Image</h2>
+              <p className="text-xs text-zinc-400">
+                Adjust the image before adding it to your post.
+              </p>
+            </div>
 
-            <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-4">
-              <button
-                type="button"
-                onClick={() => {
-                  setCropImageSrc(null);
-                  setEditingIndex(null);
+            <div className="absolute inset-0">
+              <Cropper
+                image={cropImageSrc}
+                crop={crop}
+                zoom={zoom}
+                aspect={4 / 5}
+                onCropChange={setCrop}
+                onZoomChange={setZoom}
+                onCropComplete={(_, croppedPixels) => {
+                  setCroppedAreaPixels(croppedPixels);
                 }}
-                className="rounded-xl bg-gray-700 px-4 py-2 text-white"
-              >
-                Cancel
-              </button>
+              />
+            </div>
 
-              <button
-                type="button"
-                onClick={async () => {
-                  if (!croppedAreaPixels) return;
+            <div className="absolute bottom-0 left-0 right-0 z-10 border-t border-zinc-800 bg-black/80 px-4 py-4 backdrop-blur">
+              <div className="mb-4">
+                <label className="mb-2 block text-xs font-medium uppercase tracking-wide text-zinc-500">
+                  Zoom
+                </label>
 
-                  const croppedBlob = await getCroppedImg(
-                    cropImageSrc,
-                    croppedAreaPixels,
-                  );
+                <input
+                  type="range"
+                  min={1}
+                  max={3}
+                  step={0.1}
+                  value={zoom}
+                  onChange={(e) => setZoom(Number(e.target.value))}
+                  className="w-full accent-white"
+                />
+              </div>
 
-                  const original = selectedFiles[editingIndex];
+              <div className="flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCropImageSrc(null);
+                    setEditingIndex(null);
+                    setCroppedAreaPixels(null);
+                    setCrop({ x: 0, y: 0 });
+                    setZoom(1);
+                  }}
+                  className="rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-2 text-sm font-medium text-zinc-300 transition hover:bg-zinc-800 hover:text-white"
+                >
+                  Cancel
+                </button>
 
-                  const croppedFile = new File(
-                    [croppedBlob],
-                    original.file.name,
-                    {
-                      type: "image/jpeg",
-                    },
-                  );
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (
+                      !croppedAreaPixels ||
+                      editingIndex === null ||
+                      !cropImageSrc
+                    ) {
+                      return;
+                    }
 
-                  const newPreview = URL.createObjectURL(croppedFile);
+                    const croppedBlob = await getCroppedImg(
+                      cropImageSrc,
+                      croppedAreaPixels,
+                    );
 
-                  setSelectedFiles((prev) =>
-                    prev.map((item, index) =>
-                      index === editingIndex
-                        ? {
-                            ...item,
-                            file: croppedFile,
-                            previewUrl: newPreview,
-                          }
-                        : item,
-                    ),
-                  );
+                    const original = selectedFiles[editingIndex];
 
-                  setCropImageSrc(null);
-                  setEditingIndex(null);
-                }}
-                className="rounded-xl bg-white px-4 py-2 text-black"
-              >
-                Done
-              </button>
+                    if (!original) return;
+
+                    const croppedFile = new File(
+                      [croppedBlob],
+                      original.file.name,
+                      {
+                        type: "image/jpeg",
+                      },
+                    );
+
+                    const newPreview = URL.createObjectURL(croppedFile);
+
+                    setSelectedFiles((prev) =>
+                      prev.map((item, index) => {
+                        if (index !== editingIndex) return item;
+
+                        URL.revokeObjectURL(item.previewUrl);
+
+                        return {
+                          ...item,
+                          file: croppedFile,
+                          previewUrl: newPreview,
+                        };
+                      }),
+                    );
+
+                    setCropImageSrc(null);
+                    setEditingIndex(null);
+                    setCroppedAreaPixels(null);
+                    setCrop({ x: 0, y: 0 });
+                    setZoom(1);
+                  }}
+                  className="rounded-xl bg-white px-4 py-2 text-sm font-semibold text-black transition hover:bg-zinc-200"
+                >
+                  Done
+                </button>
+              </div>
             </div>
           </div>
         </div>

@@ -7,6 +7,8 @@ import { uploadSingleMedia } from "@/services/mediaService";
 import { MediaPurpose } from "@/types/media";
 import { UpdateProfileRequest, UserProfileResponse } from "@/types/profile";
 import { useRouter } from "next/navigation";
+import Cropper from "react-easy-crop";
+import getCroppedImg from "@/utils/cropImage";
 
 type SelectedFile = {
   file: File;
@@ -41,6 +43,11 @@ export default function EditProfilePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
+  const [cropImageSrc, setCropImageSrc] = useState<string | null>(null);
 
   const canSubmit = useMemo(() => {
     return displayName.trim().length > 0;
@@ -95,10 +102,17 @@ export default function EditProfilePage() {
       URL.revokeObjectURL(selectedFile.previewUrl);
     }
 
+    const previewUrl = URL.createObjectURL(file);
+
     setSelectedFile({
       file,
-      previewUrl: URL.createObjectURL(file),
+      previewUrl,
     });
+
+    setCropImageSrc(previewUrl);
+    setCrop({ x: 0, y: 0 });
+    setZoom(1);
+    setCroppedAreaPixels(null);
 
     setRemoveProfilePicture(false);
     event.target.value = "";
@@ -110,7 +124,40 @@ export default function EditProfilePage() {
     }
 
     setSelectedFile(null);
+    setCropImageSrc(null);
+    setCroppedAreaPixels(null);
+    setCrop({ x: 0, y: 0 });
+    setZoom(1);
+
     setRemoveProfilePicture(true);
+  }
+  async function handleApplyCrop() {
+    if (!cropImageSrc || !croppedAreaPixels || !selectedFile) return;
+
+    try {
+      const croppedBlob = await getCroppedImg(cropImageSrc, croppedAreaPixels);
+
+      const croppedFile = new File([croppedBlob], selectedFile.file.name, {
+        type: "image/jpeg",
+      });
+
+      const newPreviewUrl = URL.createObjectURL(croppedFile);
+
+      URL.revokeObjectURL(selectedFile.previewUrl);
+
+      setSelectedFile({
+        file: croppedFile,
+        previewUrl: newPreviewUrl,
+      });
+
+      setCropImageSrc(null);
+      setCroppedAreaPixels(null);
+      setCrop({ x: 0, y: 0 });
+      setZoom(1);
+    } catch (error) {
+      console.error(error);
+      setErrorMessage("Failed to crop image.");
+    }
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -199,12 +246,12 @@ export default function EditProfilePage() {
         <form onSubmit={handleSubmit} className="space-y-6 p-4 md:p-6">
           <section className="space-y-4">
             <div className="flex flex-col items-center gap-4">
-              <div className="flex h-28 w-28 items-center justify-center overflow-hidden rounded-full border border-gray-700 bg-zinc-900">
+              <div className="relative flex h-28 w-28 shrink-0 items-center justify-center overflow-hidden rounded-full border border-gray-700 bg-zinc-900">
                 {currentImageUrl ? (
                   <img
                     src={currentImageUrl}
                     alt="Profile preview"
-                    className="h-full w-full object-cover"
+                    className="block h-full w-full rounded-full object-cover"
                   />
                 ) : (
                   <BiUser size={40} className="text-gray-400" />
@@ -365,6 +412,77 @@ export default function EditProfilePage() {
           </div>
         </form>
       </div>
+      {cropImageSrc && selectedFile && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 px-4">
+          <div className="relative h-[80vh] w-full max-w-lg overflow-hidden rounded-3xl border border-zinc-800 bg-zinc-950 shadow-2xl">
+            <div className="absolute left-0 right-0 top-0 z-10 border-b border-zinc-800 bg-black/80 px-4 py-3 backdrop-blur">
+              <h2 className="text-sm font-semibold text-white">
+                Crop Profile Picture
+              </h2>
+              <p className="text-xs text-zinc-400">
+                Adjust the image to fit your profile circle.
+              </p>
+            </div>
+
+            <div className="absolute inset-0">
+              <Cropper
+                image={cropImageSrc}
+                crop={crop}
+                zoom={zoom}
+                aspect={1}
+                cropShape="round"
+                showGrid={false}
+                onCropChange={setCrop}
+                onZoomChange={setZoom}
+                onCropComplete={(_, croppedPixels) => {
+                  setCroppedAreaPixels(croppedPixels);
+                }}
+              />
+            </div>
+
+            <div className="absolute bottom-0 left-0 right-0 z-10 border-t border-zinc-800 bg-black/80 px-4 py-4 backdrop-blur">
+              <div className="mb-4">
+                <label className="mb-2 block text-xs font-medium uppercase tracking-wide text-zinc-500">
+                  Zoom
+                </label>
+
+                <input
+                  type="range"
+                  min={1}
+                  max={3}
+                  step={0.1}
+                  value={zoom}
+                  onChange={(e) => setZoom(Number(e.target.value))}
+                  className="w-full accent-white"
+                />
+              </div>
+
+              <div className="flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCropImageSrc(null);
+                    setCroppedAreaPixels(null);
+                    setCrop({ x: 0, y: 0 });
+                    setZoom(1);
+                  }}
+                  className="rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-2 text-sm font-medium text-zinc-300 transition hover:bg-zinc-800 hover:text-white"
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleApplyCrop}
+                  className="rounded-xl bg-white px-4 py-2 text-sm font-semibold text-black transition hover:bg-zinc-200"
+                >
+                  Done
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

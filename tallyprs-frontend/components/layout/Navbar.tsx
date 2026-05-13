@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState, useRef, useEffect } from "react";
 import { BiDotsVerticalRounded, BiSearch, BiBell } from "react-icons/bi";
 import { getUnreadNotificationCount } from "@/services/Notifications/notificationService";
+import tallyPRs_Logo from "@/public/tallyPRs_Logo.png";
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -38,8 +39,12 @@ export default function Navbar() {
   return (
     <nav className="border-b border-gray-800 bg-black px-6 py-4 flex items-center justify-between text-white">
       {/* Left: Logo */}
-      <Link href="/" className="text-xl font-bold">
-        TallyPRs
+      <Link href="/home" className="text-xl font-bold">
+        <img
+          src={tallyPRs_Logo.src}
+          alt="TallyPRs Logo"
+          className="h-12 w-auto"
+        />
       </Link>
 
       {/* Right: Actions */}
@@ -59,7 +64,7 @@ export default function Navbar() {
           <BiBell size={22} />
 
           {unreadCount > 0 && (
-            <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-zinc-400 ring-1 ring-black" />
+            <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-[#6f1931] ring-1 ring-black" />
           )}
         </Link>
 

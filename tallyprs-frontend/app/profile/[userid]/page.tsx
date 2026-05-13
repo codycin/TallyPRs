@@ -93,7 +93,7 @@ export default function PublicProfilePage() {
   if (isLoading) {
     return (
       <main className="min-h-screen bg-black text-white">
-        <div className="mx-auto flex min-h-screen w-full max-w-2xl items-center justify-center bg-black md:my-8 md:min-h-[400px] md:rounded-3xl md:shadow-xl">
+        <div className="mx-auto flex min-h-screen w-full max-w-2xl items-center justify-center bg-black md:my-8 md:min-h-100 md:rounded-3xl md:shadow-xl">
           <div className="flex items-center gap-3 text-sm text-gray-300">
             <BiLoaderAlt className="animate-spin" size={20} />
             Loading profile...
