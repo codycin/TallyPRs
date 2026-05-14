@@ -9,7 +9,6 @@ import { UpdateProfileRequest, UserProfileResponse } from "@/types/profile";
 import { useRouter } from "next/navigation";
 import Cropper from "react-easy-crop";
 import getCroppedImg from "@/utils/cropImage";
-import heic2any from "heic2any";
 
 type SelectedFile = {
   file: File;
@@ -41,6 +40,13 @@ function isHeicFile(file: File) {
 }
 
 async function convertHeicToJpeg(file: File): Promise<File> {
+  if (typeof window === "undefined") {
+    throw new Error("HEIC conversion is only available in the browser.");
+  }
+
+  const heic2anyModule = await import("heic2any");
+  const heic2any = heic2anyModule.default;
+
   const converted = await heic2any({
     blob: file,
     toType: "image/jpeg",
