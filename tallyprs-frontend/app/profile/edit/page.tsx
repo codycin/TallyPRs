@@ -9,6 +9,7 @@ import { UpdateProfileRequest, UserProfileResponse } from "@/types/profile";
 import { useRouter } from "next/navigation";
 import Cropper from "react-easy-crop";
 import getCroppedImg from "@/utils/cropImage";
+import heic2any from "heic2any";
 
 type SelectedFile = {
   file: File;
@@ -24,6 +25,35 @@ function formatFileSize(bytes: number): string {
   const value = bytes / Math.pow(k, index);
 
   return `${value.toFixed(2)} ${units[index]}`;
+}
+function isHeicFile(file: File) {
+  const name = file.name.toLowerCase();
+  const type = file.type.toLowerCase();
+
+  return (
+    name.endsWith(".heic") ||
+    name.endsWith(".heif") ||
+    type === "image/heic" ||
+    type === "image/heif" ||
+    type === "image/heic-sequence" ||
+    type === "image/heif-sequence"
+  );
+}
+
+async function convertHeicToJpeg(file: File): Promise<File> {
+  const converted = await heic2any({
+    blob: file,
+    toType: "image/jpeg",
+    quality: 0.9,
+  });
+
+  const blob = Array.isArray(converted) ? converted[0] : converted;
+
+  const newName = file.name.replace(/\.(heic|heif)$/i, ".jpg");
+
+  return new File([blob], newName, {
+    type: "image/jpeg",
+  });
 }
 
 export default function EditProfilePage() {
@@ -88,34 +118,46 @@ export default function EditProfilePage() {
     };
   }, [selectedFile]);
 
-  function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
+  async function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
+    let file = event.target.files?.[0];
     if (!file) return;
 
-    if (!file.type.startsWith("image/")) {
+    if (!file.type.startsWith("image/") && !isHeicFile(file)) {
       setErrorMessage("Please choose an image file.");
       event.target.value = "";
       return;
     }
 
-    if (selectedFile) {
-      URL.revokeObjectURL(selectedFile.previewUrl);
+    try {
+      if (isHeicFile(file)) {
+        file = await convertHeicToJpeg(file);
+      }
+
+      if (selectedFile) {
+        URL.revokeObjectURL(selectedFile.previewUrl);
+      }
+
+      const previewUrl = URL.createObjectURL(file);
+
+      setSelectedFile({
+        file,
+        previewUrl,
+      });
+
+      setCropImageSrc(previewUrl);
+      setCrop({ x: 0, y: 0 });
+      setZoom(1);
+      setCroppedAreaPixels(null);
+
+      setRemoveProfilePicture(false);
+    } catch (error) {
+      console.error(error);
+      setErrorMessage(
+        "Failed to convert HEIC image. Please try JPG, PNG, or WebP.",
+      );
+    } finally {
+      event.target.value = "";
     }
-
-    const previewUrl = URL.createObjectURL(file);
-
-    setSelectedFile({
-      file,
-      previewUrl,
-    });
-
-    setCropImageSrc(previewUrl);
-    setCrop({ x: 0, y: 0 });
-    setZoom(1);
-    setCroppedAreaPixels(null);
-
-    setRemoveProfilePicture(false);
-    event.target.value = "";
   }
 
   function handleRemoveSelectedFile() {

@@ -17,7 +17,9 @@ export async function getPostById(postId: string): Promise<PostResponse> {
   return response.json();
 }
 
-export async function createPost(request: CreatePostRequest) {
+export async function createPost(
+  request: CreatePostRequest,
+): Promise<PostResponse> {
   const response = await apiFetch("/posts", {
     method: "POST",
     headers: {
@@ -40,7 +42,11 @@ export async function createPost(request: CreatePostRequest) {
     throw new Error(text || "Failed to create post.");
   }
 
-  return response.json();
+  const createdPost: PostResponse = await response.json();
+
+  console.log("New post id:", createdPost.id);
+
+  return createdPost;
 }
 
 export async function deletePost(postId: string) {

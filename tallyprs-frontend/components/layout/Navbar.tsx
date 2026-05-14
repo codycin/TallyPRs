@@ -37,13 +37,13 @@ export default function Navbar() {
   }, []);
 
   return (
-    <nav className="border-b border-gray-800 bg-black px-6 py-4 flex items-center justify-between text-white">
+    <nav className="border-b border-gray-800 bg-black px-6 py-2 flex items-center justify-between text-white">
       {/* Left: Logo */}
-      <Link href="/home" className="text-xl font-bold">
+      <Link href="/" className="text-xl font-bold">
         <img
           src={tallyPRs_Logo.src}
           alt="TallyPRs Logo"
-          className="h-12 w-auto"
+          className="h-14 w-auto"
         />
       </Link>
 

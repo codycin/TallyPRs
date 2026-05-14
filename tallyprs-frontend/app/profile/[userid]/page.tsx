@@ -18,11 +18,21 @@ export default function PublicProfilePage() {
 
   const [profile, setProfile] = useState<PublicProfileResponse | null>(null);
   const [isFollowing, setIsFollowing] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [errorMessage, setErrorMessage] = useState("");
+
+  useEffect(() => {
+    setCurrentUserId(localStorage.getItem("currentUserId"));
+  }, []);
+
+  const isOwnProfile =
+    !!currentUserId &&
+    !!userId &&
+    currentUserId.toLowerCase() === userId.toLowerCase();
 
   useEffect(() => {
     async function loadProfile() {
@@ -144,12 +154,12 @@ export default function PublicProfilePage() {
               </h2>
             </div>
           </div>
-
-          <div className="mt-4 flex justify-center">
-            <button
-              onClick={handleFollowToggle}
-              disabled={isSubmitting}
-              className={`flex h-11 min-w-33 items-center justify-center whitespace-nowrap rounded-full px-6 py-2 text-sm font-semibold leading-none transition
+          {!isOwnProfile && (
+            <div className="mt-4 flex justify-center">
+              <button
+                onClick={handleFollowToggle}
+                disabled={isSubmitting}
+                className={`flex h-11 min-w-33 items-center justify-center whitespace-nowrap rounded-full px-6 py-2 text-sm font-semibold leading-none transition
                     ${
                       isFollowing
                         ? "border border-gray-500 bg-zinc-900 text-white hover:bg-zinc-800"
@@ -157,14 +167,15 @@ export default function PublicProfilePage() {
                     }
                     ${isSubmitting ? "cursor-not-allowed opacity-60" : "cursor-pointer"}
                 `}
-            >
-              {isSubmitting
-                ? "Please wait..."
-                : isFollowing
-                  ? "Following"
-                  : "Follow"}
-            </button>
-          </div>
+              >
+                {isSubmitting
+                  ? "Please wait..."
+                  : isFollowing
+                    ? "Following"
+                    : "Follow"}
+              </button>
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-4 text-sm text-gray-400">
             <div>Followers: {profile?.followCount}</div>
             <div>Following: {profile?.followingCount}</div>
