@@ -35,8 +35,26 @@ namespace TallahasseePRs.Api.Controllers
         {
             var userId = _currentUserService.GetUserId();
 
-            var result = await _mediaService.CreateUploadAsync(userId, request, cancellationToken);
-            return Ok(result);
+            try
+            {
+                var result = await _mediaService.CreateUploadAsync(
+                    userId,
+                    request,
+                    cancellationToken);
+
+                return Ok(result);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new
+                {
+                    message = ex.Message
+                });
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return Forbid();
+            }
         }
 
         [HttpPost("{id:guid}/complete")]

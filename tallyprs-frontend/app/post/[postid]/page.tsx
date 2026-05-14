@@ -6,8 +6,10 @@ import { BiUser, BiLoaderAlt } from "react-icons/bi";
 import { getPostById } from "@/services/Post/posts";
 import { PostResponse } from "@/types/post";
 import PostCard from "@/components/PostCard";
+import { useRouter } from "next/navigation";
 
 export default function PostPage() {
+  const router = useRouter();
   const params = useParams();
   const postId = params?.postid as string | undefined;
 
@@ -71,7 +73,7 @@ export default function PostPage() {
 
   return (
     <div className="max-w-2xl mx-auto py-10">
-      <PostCard post={post} />
+      <PostCard post={post} onDeleted={() => router.push("/profile")} />
     </div>
   );
 }

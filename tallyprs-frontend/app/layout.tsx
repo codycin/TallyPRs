@@ -30,7 +30,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <div className="min-h-screen bg-black text-white pb-24">
+        <div className="mx-auto min-h-screen w-full max-w-lg border-x border-gray-800 bg-black">
           <AuthProvider>
             <AuthenticatedNavbar />
             {children}

@@ -17,6 +17,7 @@ import Cropper from "react-easy-crop";
 import getCroppedImg from "@/utils/cropImage";
 import { LiftResponse } from "@/types/lift";
 import { searchLifts } from "@/services/Lifts/liftService";
+import { useRouter } from "next/navigation";
 
 type SelectedFile = {
   localId: string;
@@ -43,6 +44,7 @@ function formatFileSize(bytes: number): string {
 }
 
 export default function CreatePostPage() {
+  const router = useRouter();
   //Post content
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -223,7 +225,7 @@ export default function CreatePostPage() {
         unit: nonJudgedLift ? null : unit,
       };
 
-      await createPost(payload);
+      const response = await createPost(payload);
 
       setTitle("");
       setDescription("");
@@ -232,6 +234,7 @@ export default function CreatePostPage() {
       setSelectedFiles([]);
 
       alert("Post created successfully.");
+      router.push(`/post/${response.id}`);
     } catch (error) {
       console.error(error);
       setErrorMessage(

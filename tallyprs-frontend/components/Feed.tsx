@@ -72,15 +72,36 @@ export default function Feed<T>({
   }
 
   return (
-    <div>
+    <div className="pb-24">
       {items.map((item) => {
         const key = getKey(item);
 
         return <div key={key}>{renderItem(item, { removeItem })}</div>;
       })}
-      {loading && <p>Loading...</p>}
-      {hasMore && !loading && <button onClick={loadMore}>Load More</button>}
-      {error && <p>{error}</p>}
+
+      {loading && (
+        <div className="flex justify-center py-6">
+          <p className="text-sm text-zinc-500">Loading...</p>
+        </div>
+      )}
+
+      {hasMore && !loading && (
+        <div className="flex justify-center py-6">
+          <button
+            type="button"
+            onClick={loadMore}
+            className="rounded-full border border-zinc-800 bg-zinc-950 px-5 py-2 text-sm font-medium text-zinc-300 transition hover:border-zinc-700 hover:bg-zinc-900 hover:text-white"
+          >
+            Load More
+          </button>
+        </div>
+      )}
+
+      {error && (
+        <div className="flex justify-center py-4">
+          <p className="text-sm text-red-400">{error}</p>
+        </div>
+      )}
     </div>
   );
 }

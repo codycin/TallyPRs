@@ -1,7 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-using Microsoft.Identity.Client.Extensions.Msal;
-using System.Net.Mime;
 using TallahasseePRs.Api.Data;
 using TallahasseePRs.Api.Data.Configurations;
 using TallahasseePRs.Api.DTOs.Media;
@@ -15,8 +13,13 @@ namespace TallahasseePRs.Api.Services.Media
         private static readonly HashSet<string> AllowedImageTypes = new(StringComparer.OrdinalIgnoreCase)
         {
             "image/jpeg",
+            "image/jpg",
             "image/png",
-            "image/webp"
+            "image/webp",
+            "image/heic",
+            "image/heif",
+            "image/heic-sequence",
+            "image/heif-sequence"
         };
 
         private static readonly HashSet<string> AllowedVideoTypes = new(StringComparer.OrdinalIgnoreCase)
@@ -24,6 +27,34 @@ namespace TallahasseePRs.Api.Services.Media
             "video/mp4",
             "video/webm",
             "video/quicktime"
+        };
+        private static readonly HashSet<string> AllowedImageExtensions = new(StringComparer.OrdinalIgnoreCase)
+        {
+            ".jpg",
+            ".jpeg",
+            ".png",
+            ".webp",
+            ".heic",
+            ".heif"
+        };
+
+        private static readonly HashSet<string> AllowedVideoExtensions = new(StringComparer.OrdinalIgnoreCase)
+        {
+            ".mp4",
+            ".webm",
+            ".mov"
+        };
+        private static readonly HashSet<string> AllowedMediaExtensions = new(StringComparer.OrdinalIgnoreCase)
+        {
+            ".jpg",
+            ".jpeg",
+            ".png",
+            ".webp",
+            ".heic",
+            ".heif",
+            ".mp4",
+            ".webm",
+            ".mov"
         };
 
         private readonly AppDbContext _db;
@@ -49,6 +80,27 @@ namespace TallahasseePRs.Api.Services.Media
             _logger = logger;
 
         }
+        private static string NormalizeContentType(string contentType, string fileName, MediaKind kind)
+        {
+            var normalized = contentType.Trim().ToLowerInvariant();
+            var extension = Path.GetExtension(fileName).ToLowerInvariant();
+
+            if (AllowedImageTypes.Contains(normalized) || AllowedVideoTypes.Contains(normalized))
+                return normalized;
+
+            return extension switch
+            {
+                ".jpg" or ".jpeg" => "image/jpeg",
+                ".png" => "image/png",
+                ".webp" => "image/webp",
+                ".heic" => "image/heic",
+                ".heif" => "image/heif",
+                ".mp4" => "video/mp4",
+                ".webm" => "video/webm",
+                ".mov" => "video/quicktime",
+                _ => throw new InvalidOperationException("Unsupported file type.")
+            };
+        }
 
         public async Task<CreateMediaUploadResponse> CreateUploadAsync(
             Guid userId,
@@ -57,16 +109,17 @@ namespace TallahasseePRs.Api.Services.Media
         {
             ValidateRequest(request);
 
-            var kind = DetermineKind(request.ContentType);
+            var kind = DetermineKind(request.ContentType, request.FileName);
+            var normalizedContentType = NormalizeContentType(request.ContentType, request.FileName, kind);
 
-            ValidateAllowedContentType(kind, request.ContentType);
+            ValidateAllowedContentType(kind, normalizedContentType, request.FileName);
             ValidateFileSize(kind, request.Purpose, request.SizeBytes);
 
             await ValidateTargetOwnershipAsync(userId, request, cancellationToken);
             await ValidatePurposeLimitsAsync(userId, request, kind, cancellationToken);
 
             var mediaId = Guid.NewGuid();
-            var objectKey = BuildObjectKey(userId, mediaId, request, kind);
+            var objectKey = BuildObjectKey(userId, mediaId, request, kind, normalizedContentType);
 
             var media = new Models.Media
             {
@@ -81,7 +134,7 @@ namespace TallahasseePRs.Api.Services.Media
                 ObjectKey = objectKey,
 
                 OriginalFileName = request.FileName,
-                ContentType = request.ContentType,
+                ContentType = normalizedContentType,
                 SizeBytes = request.SizeBytes,
 
                 PostId = request.PostId,
@@ -96,7 +149,7 @@ namespace TallahasseePRs.Api.Services.Media
 
             var presigned = await _storage.CreatePresignedUploadAsync(
                 objectKey,
-                request.ContentType,
+                normalizedContentType,
                 TimeSpan.FromMinutes(10),
                 cancellationToken);
 
@@ -341,12 +394,26 @@ namespace TallahasseePRs.Api.Services.Media
             _db.Media.Remove(media);
             await _db.SaveChangesAsync(cancellationToken);
         }
-        private static MediaKind DetermineKind(string contentType)
+        private static MediaKind DetermineKind(string contentType, string fileName)
         {
-            if (contentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
+            var normalizedContentType = contentType.Trim().ToLowerInvariant();
+            var extension = Path.GetExtension(fileName).ToLowerInvariant();
+
+            if (
+                normalizedContentType.StartsWith("image/") ||
+                extension is ".jpg" or ".jpeg" or ".png" or ".webp" or ".heic" or ".heif"
+            )
+            {
                 return MediaKind.Image;
-            if(contentType.StartsWith("video/", StringComparison.OrdinalIgnoreCase))
+            }
+
+            if (
+                normalizedContentType.StartsWith("video/") ||
+                extension is ".mp4" or ".webm" or ".mov"
+            )
+            {
                 return MediaKind.Video;
+            }
 
             throw new InvalidOperationException("Unsupported media type.");
         }
@@ -366,12 +433,23 @@ namespace TallahasseePRs.Api.Services.Media
                 throw new InvalidOperationException("File must not be empty.");
         }
 
-        private static void ValidateAllowedContentType(MediaKind kind, string contentType)
+        private static void ValidateAllowedContentType(
+            MediaKind kind,
+            string contentType,
+            string fileName)
         {
+            var extension = Path.GetExtension(fileName);
+
             var isAllowed = kind switch
             {
-                MediaKind.Image => AllowedImageTypes.Contains(contentType),
-                MediaKind.Video => AllowedVideoTypes.Contains(contentType),
+                MediaKind.Image =>
+                    AllowedImageTypes.Contains(contentType) ||
+                    AllowedImageExtensions.Contains(extension),
+
+                MediaKind.Video =>
+                    AllowedVideoTypes.Contains(contentType) ||
+                    AllowedVideoExtensions.Contains(extension),
+
                 _ => false
             };
 
@@ -483,26 +561,60 @@ namespace TallahasseePRs.Api.Services.Media
 
             if (request.Purpose == MediaPurpose.ProfilePicture && request.ProfileId.HasValue)
             {
-                var existing = await _db.Media
-                    .AnyAsync(m =>
-                        m.ProfileId == request.ProfileId.Value &&
-                        m.Purpose == MediaPurpose.ProfilePicture &&
-                        m.Status != MediaStatus.Deleted,
-                        cancellationToken);
-
-                if (existing)
-                    throw new InvalidOperationException("Profile already has picture media record.");
+                //Fallback, delete all of this media since it shouldnt exist
+                await DeleteExistingProfilePictureMediaAsync(
+                    request.ProfileId.Value,
+                    userId,
+                    cancellationToken);
             }
 
+        }
+        private async Task DeleteExistingProfilePictureMediaAsync(
+            Guid profileId,
+            Guid userId,
+            CancellationToken cancellationToken = default)
+        {
+            var existingMedia = await _db.Media
+                .Where(m =>
+                    m.OwnerId == userId &&
+                    m.Purpose == MediaPurpose.ProfilePicture &&
+                    m.Status != MediaStatus.Deleted)
+                .ToListAsync(cancellationToken);
+
+            foreach (var media in existingMedia)
+            {
+                // Delete object from storage first if it exists.
+                try
+                {
+                    await _storage.DeleteAsync(media.ObjectKey, cancellationToken);
+
+                    if (!string.IsNullOrWhiteSpace(media.ThumbnailObjectKey))
+                    {
+                        await _storage.DeleteAsync(media.ThumbnailObjectKey, cancellationToken);
+                    }
+                }
+                catch
+                {
+                    _logger.LogWarning(
+                        "Failed to delete media object from storage during profile picture update. MediaId={MediaId} ObjectKey={ObjectKey}",
+                        media.Id,
+                        media.ObjectKey);
+                }
+
+                media.Status = MediaStatus.Deleted;
+                media.UpdatedAt = DateTime.UtcNow;
+                media.ProfileId = null;
+            }
         }
 
         private static string BuildObjectKey(
             Guid userId,
             Guid mediaId,
             CreateMediaUploadRequest request,
-            MediaKind kind)
+            MediaKind kind,
+            string normalizedContentType)
         {
-            var extension = GetExtensionForContentType(request.ContentType, request.FileName);
+            var extension = GetExtensionForContentType(normalizedContentType, request.FileName);
 
             return request.Purpose switch
             {
@@ -516,7 +628,6 @@ namespace TallahasseePRs.Api.Services.Media
 
                 MediaPurpose.ProfilePicture =>
                     $"users/{userId}/profile/picture/{mediaId}{extension}",
-
 
                 _ => throw new InvalidOperationException("Invalid media purpose.")
             };
@@ -554,16 +665,31 @@ namespace TallahasseePRs.Api.Services.Media
 
         private static string GetExtensionForContentType(string contentType, string fileName)
         {
-            return contentType.ToLowerInvariant() switch
+            var normalizedContentType = contentType.Trim().ToLowerInvariant();
+            var originalExtension = Path.GetExtension(fileName).ToLowerInvariant();
+
+            var extension = normalizedContentType switch
             {
                 "image/jpeg" => ".jpg",
+                "image/jpg" => ".jpg",
                 "image/png" => ".png",
                 "image/webp" => ".webp",
+                "image/heic" => ".heic",
+                "image/heif" => ".heif",
+                "image/heic-sequence" => ".heic",
+                "image/heif-sequence" => ".heif",
+
                 "video/mp4" => ".mp4",
                 "video/webm" => ".webm",
                 "video/quicktime" => ".mov",
-                _ => Path.GetExtension(fileName)
+
+                _ => originalExtension
             };
+
+            if (!AllowedMediaExtensions.Contains(extension))
+                throw new InvalidOperationException("Unsupported file extension.");
+
+            return extension;
         }
 
         private MediaResponse ToResponse(Models.Media media)

@@ -32,7 +32,7 @@ export default function LoginPage() {
       localStorage.setItem("email", result.user.email);
       localStorage.setItem("role", result.user.role);
 
-      router.push("/home");
+      router.push("/");
     } catch (err) {
       console.error(err);
       setError("Login failed.");
