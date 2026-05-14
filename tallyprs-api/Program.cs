@@ -40,7 +40,8 @@ builder.Services.AddCors(options =>
                 "http://localhost:3000",
                 "https://localhost:3000",
                 "http://localhost:3001",
-                "https://tally-p-i2mvaktmj-cody-cintron-s-projects.vercel.app/"
+                "https://tally-p-i2mvaktmj-cody-cintron-s-projects.vercel.app",
+                "https://tally-p-rs.vercel.app"
             )
             .AllowAnyHeader()
             .AllowAnyMethod();
