@@ -1,0 +1,12 @@
+bin/
+obj/
+.vs/
+.git/
+.gitignore
+tallyprs-frontend/node_modules/
+tallyprs-frontend/.next/
+tallyprs-frontend/out/
+*.user
+*.suo
+.env
+.env.*

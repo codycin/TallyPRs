@@ -418,7 +418,7 @@ export default function PostCard({ post, onDeleted }: PostCardProps) {
         )}
 
         {/* Status Badge */}
-        {post.liftId !== "019e18eb-688f-7f28-96e9-41ef6ffe44b7" &&
+        {post.liftId !== "019e2800-c24a-7e77-943e-1a81f096116f" &&
           post.liftId != null && (
             <div className="space-y-3">
               {status === 0 && (
