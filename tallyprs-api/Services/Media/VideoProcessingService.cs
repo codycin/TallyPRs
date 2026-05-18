@@ -173,22 +173,35 @@ namespace TallahasseePRs.Api.Services.Media
             }
         }
 
-        private async Task RunFfmpegForPlaybackAsync(string inputPath, string outputPath, CancellationToken cancellationToken)
+        private async Task RunFfmpegForPlaybackAsync(
+            string inputPath,
+            string outputPath,
+            CancellationToken cancellationToken)
         {
+            var scaleFilter =
+                $"scale='min({_options.MaxPlaybackWidth},iw)':'min({_options.MaxPlaybackHeight},ih)':force_original_aspect_ratio=decrease," +
+                "scale=trunc(iw/2)*2:trunc(ih/2)*2";
+
             var args =
                 $"-y -i \"{inputPath}\" " +
-                $"-vf \"scale='min({_options.MaxPlaybackWidth},iw)':'min({_options.MaxPlaybackHeight},ih)':force_original_aspect_ratio=decrease\" " +
+                $"-vf \"{scaleFilter}\" " +
+                "-map 0:v:0 -map 0:a? " +
                 "-c:v libx264 -preset medium -crf 23 " +
-                "-c:a aac -movflags +faststart " +
+                "-c:a aac -b:a 128k " +
+                "-movflags +faststart " +
                 $"\"{outputPath}\"";
 
             await RunProcessAsync(_options.FfmpegPath, args, cancellationToken);
         }
 
-        private async Task RunFfmpegForThumbnailAsync(string inputPath, string thumbnailPath, CancellationToken cancellationToken)
+        private async Task RunFfmpegForThumbnailAsync(
+            string inputPath,
+            string thumbnailPath,
+            CancellationToken cancellationToken)
         {
             var args =
-                $"-y -ss {_options.ThumbnailSecond} -i \"{inputPath}\" -vframes 1 " +
+                $"-y -ss {_options.ThumbnailSecond} -i \"{inputPath}\" " +
+                "-frames:v 1 -q:v 2 " +
                 $"\"{thumbnailPath}\"";
 
             await RunProcessAsync(_options.FfmpegPath, args, cancellationToken);

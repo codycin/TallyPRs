@@ -31,21 +31,28 @@ public sealed class PostsController : ControllerBase
         return Ok(post);
     }
 
-    
     [Authorize]
     [HttpPost]
     [EnableRateLimiting("writes")]
-
-    public async Task<IActionResult> Create([FromBody] CreatePostRequest request) 
+    public async Task<IActionResult> Create([FromBody] CreatePostRequest request)
     {
-        var userId = _currentUser.GetUserId();       
-        var created = await _posts.CreateAsync(userId, request);
+        try
+        {
+            var userId = _currentUser.GetUserId();
+            var created = await _posts.CreateAsync(userId, request);
 
-        
-        return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
+            return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new
+            {
+                message = ex.Message
+            });
+        }
     }
 
-    
+
     [Authorize]
     [HttpPut("{id:guid}")]
     [EnableRateLimiting("writes")]
