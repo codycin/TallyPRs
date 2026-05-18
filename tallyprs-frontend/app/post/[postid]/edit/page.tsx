@@ -36,7 +36,7 @@ type ExistingMediaItem = {
   originalFileName?: string | null;
 };
 
-const NON_JUDGED_LIFT_ID = "019e18eb-688f-7f28-96e9-41ef6ffe44b7";
+const NON_JUDGED_LIFT_ID = "019e2800-c24a-7e77-943e-1a81f096116f";
 
 function getFileKind(file: File): SelectedFile["kind"] {
   if (file.type.startsWith("image/")) return "image";
@@ -111,7 +111,7 @@ export default function EditPostPage() {
           setUnit(post.unit ?? "lb");
           setLiftSearch("");
         } else {
-          setLiftId("019e18eb-688f-7f28-96e9-41ef6ffe44b7");
+          setLiftId("019e2800-c24a-7e77-943e-1a81f096116f");
           setWeight("");
           setUnit("");
           setLiftSearch("");
@@ -307,7 +307,7 @@ export default function EditPostPage() {
         title: title.trim(),
         description: description.trim(),
         mediaIds,
-        liftId: nonJudgedLift ? "019e18eb-688f-7f28-96e9-41ef6ffe44b7" : liftId,
+        liftId: nonJudgedLift ? "019e2800-c24a-7e77-943e-1a81f096116f" : liftId,
         weight: nonJudgedLift ? null : Number(weight),
         unit: nonJudgedLift ? null : unit,
       };
