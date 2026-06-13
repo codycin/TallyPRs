@@ -7,6 +7,7 @@ import { getPostById } from "@/services/Post/posts";
 import { PostResponse } from "@/types/post";
 import PostCard from "@/components/PostCard";
 import { useRouter } from "next/navigation";
+import { ApiError } from "@/utils/apiError";
 
 export default function PostPage() {
   const router = useRouter();
@@ -33,6 +34,10 @@ export default function PostPage() {
         setPost(data);
       } catch (error) {
         console.error(error);
+        if (error instanceof ApiError && error.status === 401) {
+          router.push("/login");
+          return;
+        }
         setErrorMessage(
           error instanceof Error ? error.message : "Failed to load post.",
         );

@@ -136,6 +136,8 @@ namespace TallahasseePRs.Api.Services.Media
                 media.UpdatedAt = DateTime.UtcNow;
                 media.ProcessingError = null;
 
+                
+
                 await _db.SaveChangesAsync(cancellationToken);
                 _logger.LogInformation(
                     "Video processing completed. MediaId={MediaId} DurationMs={DurationMs} Width={Width} Height={Height} DurationSeconds={DurationSeconds}",
@@ -166,6 +168,16 @@ namespace TallahasseePRs.Api.Services.Media
                 {
                     if (Directory.Exists(tempRoot))
                         Directory.Delete(tempRoot, recursive: true);
+
+                    //Delete original
+                    if (!string.IsNullOrWhiteSpace(media.ObjectKey))
+                    {
+                        var exists = await _storage.ExistsAsync(media.ObjectKey, cancellationToken);
+                        if (exists)
+                        {
+                            await _storage.DeleteAsync(media.ObjectKey, cancellationToken);
+                        }
+                    }
                 }
                 catch
                 {
@@ -180,15 +192,29 @@ namespace TallahasseePRs.Api.Services.Media
         {
             var scaleFilter =
                 $"scale='min({_options.MaxPlaybackWidth},iw)':'min({_options.MaxPlaybackHeight},ih)':force_original_aspect_ratio=decrease," +
-                "scale=trunc(iw/2)*2:trunc(ih/2)*2";
+                "scale=trunc(iw/2)*2:trunc(ih/2)*2," +
+                "fps=30";
 
             var args =
-                $"-y -i \"{inputPath}\" " +
+                $"-y -hide_banner -ignore_unknown -i \"{inputPath}\" " +
+
+                // Use first video stream and first audio stream only.
+                "-map 0:v:0 -map 0:a:0? " +
+
+                // Drop data and subtitle streams.
+                "-dn -sn " +
+
                 $"-vf \"{scaleFilter}\" " +
-                "-map 0:v:0 -map 0:a? " +
-                "-c:v libx264 -preset medium -crf 23 " +
-                "-c:a aac -b:a 128k " +
+
+                // Web/mobile-compatible video.
+                "-c:v libx264 -preset veryfast -crf 18 -pix_fmt yuv420p " +
+
+                // Web/mobile-compatible audio.
+                "-c:a aac -b:a 128k -ac 2 " +
+
+                // Better web playback.
                 "-movflags +faststart " +
+
                 $"\"{outputPath}\"";
 
             await RunProcessAsync(_options.FfmpegPath, args, cancellationToken);

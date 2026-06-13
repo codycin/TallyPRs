@@ -18,7 +18,8 @@ import getCroppedImg from "@/utils/cropImage";
 import { LiftResponse } from "@/types/lift";
 import { searchLifts } from "@/services/Lifts/liftService";
 import { useRouter } from "next/navigation";
-
+import { createId } from "@/utils/createId";
+import { ApiError } from "@/utils/apiError";
 type SelectedFile = {
   localId: string;
   file: File;
@@ -30,17 +31,6 @@ function getFileKind(file: File): SelectedFile["kind"] {
   if (file.type.startsWith("image/")) return "image";
   if (file.type.startsWith("video/")) return "video";
   return "other";
-}
-
-function formatFileSize(bytes: number): string {
-  if (bytes === 0) return "0 Bytes";
-
-  const units = ["Bytes", "KB", "MB", "GB"];
-  const k = 1024;
-  const index = Math.floor(Math.log(bytes) / Math.log(k));
-  const value = bytes / Math.pow(k, index);
-
-  return `${value.toFixed(2)} ${units[index]}`;
 }
 
 export default function CreatePostPage() {
@@ -146,7 +136,7 @@ export default function CreatePostPage() {
       const previewUrl = URL.createObjectURL(processedFile);
 
       processedFiles.push({
-        localId: crypto.randomUUID(),
+        localId: createId(),
         file: processedFile,
         previewUrl,
         kind,
@@ -237,6 +227,10 @@ export default function CreatePostPage() {
       router.push(`/post/${response.id}`);
     } catch (error) {
       console.error(error);
+      if (error instanceof ApiError && error.status === 401) {
+        router.push("/login");
+        return;
+      }
       setErrorMessage(
         error instanceof Error ? error.message : "Failed to create post.",
       );
@@ -258,7 +252,7 @@ export default function CreatePostPage() {
             <div>
               <label
                 htmlFor="title"
-                className="mb-2 flex items-center gap-2 text-sm font-medium text-white"
+                className="mb-2 flex items-center gap-2 text-base sm:text-sm font-medium text-white"
               >
                 <BiText size={18} />
                 Title
@@ -270,7 +264,7 @@ export default function CreatePostPage() {
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="Give your post a title"
                 maxLength={120}
-                className="w-full rounded-2xl border border-gray-700 bg-zinc-900 px-4 py-3 text-sm text-white outline-none transition focus:border-white"
+                className="w-full rounded-2xl border border-gray-700 bg-zinc-900 px-4 py-3 text-base sm:text-sm text-white outline-none transition focus:border-white"
               />
               <p className="mt-1 text-right text-xs text-gray-400">
                 {title.length}/120
@@ -280,7 +274,7 @@ export default function CreatePostPage() {
             <div>
               <label
                 htmlFor="description"
-                className="mb-2 flex items-center gap-2 text-sm font-medium text-white"
+                className="mb-2 flex items-center gap-2 text-base sm:text-sm font-medium text-white"
               >
                 <BiDetail size={18} />
                 Description
@@ -292,7 +286,7 @@ export default function CreatePostPage() {
                 placeholder="Write something about your PR, workout, or progress..."
                 rows={5}
                 maxLength={1000}
-                className="w-full resize-none rounded-2xl border border-gray-700 bg-zinc-900 px-4 py-3 text-sm text-white outline-none transition focus:border-white"
+                className="w-full resize-none rounded-2xl border border-gray-700 bg-zinc-900 px-4 py-3 text-base sm:text-sm text-white outline-none transition focus:border-white"
               />
               <p className="mt-1 text-right text-xs text-gray-400">
                 {description.length}/1000
@@ -334,7 +328,7 @@ export default function CreatePostPage() {
               <div className="relative">
                 <label
                   htmlFor="lift"
-                  className="mb-2 block text-sm font-medium text-white"
+                  className="mb-2 block text-base sm:text-sm font-medium text-white"
                 >
                   Lift
                 </label>
@@ -349,7 +343,7 @@ export default function CreatePostPage() {
                     setLiftId("");
                   }}
                   placeholder="Search bench, squat, deadlift..."
-                  className="w-full rounded-2xl border border-gray-700 bg-zinc-900 px-4 py-3 text-sm text-white outline-none transition focus:border-white"
+                  className="w-full rounded-2xl border border-gray-700 bg-zinc-900 px-4 py-3 text-base sm:text-sm text-white outline-none transition focus:border-white"
                 />
 
                 {liftResults.length > 0 && !selectedLift && (
@@ -389,7 +383,7 @@ export default function CreatePostPage() {
                 <div className="col-span-2">
                   <label
                     htmlFor="weight"
-                    className="mb-2 block text-sm font-medium text-white"
+                    className="mb-2 block text-base sm:text-sm font-medium text-white"
                   >
                     Weight
                   </label>
@@ -402,14 +396,14 @@ export default function CreatePostPage() {
                     placeholder="225"
                     min="0"
                     step="0.5"
-                    className="w-full rounded-2xl border border-gray-700 bg-zinc-900 px-4 py-3 text-sm text-white outline-none transition focus:border-white"
+                    className="w-full rounded-2xl border border-gray-700 bg-zinc-900 px-4 py-3 text-base sm:text-sm text-white outline-none transition focus:border-white"
                   />
                 </div>
 
                 <div>
                   <label
                     htmlFor="unit"
-                    className="mb-2 block text-sm font-medium text-white"
+                    className="mb-2 block text-base sm:text-sm font-medium text-white"
                   >
                     Unit
                   </label>
@@ -418,7 +412,7 @@ export default function CreatePostPage() {
                     id="unit"
                     value={unit}
                     onChange={(e) => setUnit(e.target.value)}
-                    className="w-full rounded-2xl border border-gray-700 bg-zinc-900 px-4 py-3 text-sm text-white outline-none transition focus:border-white"
+                    className="w-full rounded-2xl border border-gray-700 bg-zinc-900 px-4 py-3 text-base sm:text-sm text-white outline-none transition focus:border-white"
                   >
                     <option value="">Unit</option>
                     <option value="lb">lb</option>
@@ -508,6 +502,14 @@ export default function CreatePostPage() {
                             className="h-full w-full object-cover"
                             muted
                             playsInline
+                            preload="metadata"
+                            onLoadedMetadata={(e) => {
+                              const video = e.currentTarget;
+                              video.currentTime = Math.min(
+                                0.1,
+                                video.duration || 0,
+                              );
+                            }}
                           />
                           <div className="absolute inset-x-0 bottom-0 flex items-center gap-2 bg-black/55 px-2 py-2 text-white">
                             <BiVideo size={18} />
@@ -524,15 +526,6 @@ export default function CreatePostPage() {
                           </span>
                         </div>
                       )}
-                    </div>
-
-                    <div className="border-t border-gray-200 px-3 py-2">
-                      <p className="truncate text-xs font-medium text-gray-800">
-                        {item.file.name}
-                      </p>
-                      <p className="text-[11px] text-gray-500">
-                        {formatFileSize(item.file.size)}
-                      </p>
                     </div>
                   </div>
                 ))}
@@ -574,7 +567,7 @@ export default function CreatePostPage() {
               </p>
             </div>
 
-            <div className="absolute inset-0">
+            <div className="absolute left-0 right-0 top-19 bottom-39">
               <Cropper
                 image={cropImageSrc}
                 crop={crop}

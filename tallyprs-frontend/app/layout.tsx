@@ -32,8 +32,10 @@ export default function RootLayout({
       >
         <div className="mx-auto min-h-screen w-full max-w-lg border-x border-gray-800 bg-black">
           <AuthProvider>
-            <AuthenticatedNavbar />
-            {children}
+            <main className="pb-[calc(4rem+env(safe-area-inset-bottom))]">
+              <AuthenticatedNavbar />
+              {children}
+            </main>
             <AuthenticatedFooter />
           </AuthProvider>
         </div>

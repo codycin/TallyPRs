@@ -9,6 +9,7 @@ import { UpdateProfileRequest, UserProfileResponse } from "@/types/profile";
 import { useRouter } from "next/navigation";
 import Cropper from "react-easy-crop";
 import getCroppedImg from "@/utils/cropImage";
+import { ApiError } from "@/utils/apiError";
 
 type SelectedFile = {
   file: File;
@@ -262,9 +263,10 @@ export default function EditProfilePage() {
       router.refresh();
     } catch (error) {
       console.error(error);
-      setErrorMessage(
-        error instanceof Error ? error.message : "Failed to update profile.",
-      );
+      if (error instanceof ApiError && error.status === 403) {
+        setErrorMessage("You do not have permission to update this profile.");
+        return;
+      }
     } finally {
       setIsSubmitting(false);
     }

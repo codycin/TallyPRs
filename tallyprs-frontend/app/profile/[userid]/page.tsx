@@ -10,9 +10,11 @@ import Feed from "@/components/Feed";
 import PostCard from "@/components/PostCard";
 import { getUserPostFeed } from "@/services/Feed/feedService";
 import type { PostResponse } from "@/types/post";
+import { useRouter } from "next/navigation";
 
 export default function PublicProfilePage() {
   //Route params
+  const router = useRouter();
   const params = useParams();
   const userId = params?.userid as string | undefined;
 
@@ -51,9 +53,7 @@ export default function PublicProfilePage() {
         setIsFollowing(data.isFollowedByCurrentUser);
       } catch (error) {
         console.error("loadProfile error:", error);
-        setErrorMessage(
-          error instanceof Error ? error.message : "Failed to load profile.",
-        );
+        router.push(`/login`);
       } finally {
         setIsLoading(false);
       }

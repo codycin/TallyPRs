@@ -62,7 +62,7 @@ export default function LoginPage() {
           <div className="relative">
             <BiUser className="absolute left-3 top-1/2 -translate-y-1/2 text-xl text-zinc-500" />
             <input
-              className="w-full rounded-xl border border-white/10 bg-black px-11 py-3 text-sm text-white outline-none transition placeholder:text-zinc-600 focus:border-red-500/60 focus:ring-2 focus:ring-red-500/10"
+              className="w-full rounded-xl border border-white/10 bg-black px-11 py-3 text-base sm:text-sm text-white outline-none transition placeholder:text-zinc-600 focus:border-red-500/60 focus:ring-2 focus:ring-red-500/10"
               type="text"
               placeholder="Email or Username"
               value={emailOrUsername}
@@ -74,7 +74,7 @@ export default function LoginPage() {
           <div className="relative">
             <BiLockAlt className="absolute left-3 top-1/2 -translate-y-1/2 text-xl text-zinc-500" />
             <input
-              className="w-full rounded-xl border border-white/10 bg-black px-11 py-3 text-sm text-white outline-none transition placeholder:text-zinc-600 focus:border-red-500/60 focus:ring-2 focus:ring-red-500/10"
+              className="w-full rounded-xl border border-white/10 bg-black px-11 py-3 text-base sm:text-sm text-white outline-none transition placeholder:text-zinc-600 focus:border-red-500/60 focus:ring-2 focus:ring-red-500/10"
               type="password"
               placeholder="Password"
               value={password}

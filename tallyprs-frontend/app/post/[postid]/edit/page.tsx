@@ -20,6 +20,9 @@ import { MediaPurpose } from "@/types/media";
 import { getPostById, updatePost } from "@/services/Post/posts";
 import { LiftResponse } from "@/types/lift";
 import { searchLifts } from "@/services/Lifts/liftService";
+import { createId } from "@/utils/createId";
+
+import { ApiError } from "@/utils/apiError";
 
 type SelectedFile = {
   localId: string;
@@ -35,6 +38,24 @@ type ExistingMediaItem = {
   kind: string;
   originalFileName?: string | null;
 };
+
+type MediaEditorItem =
+  | {
+      localId: string;
+      source: "existing";
+      id: string;
+      url: string;
+      thumbnailUrl?: string | null;
+      kind: "image" | "video" | "other";
+      originalFileName?: string | null;
+    }
+  | {
+      localId: string;
+      source: "new";
+      file: File;
+      previewUrl: string;
+      kind: "image" | "video" | "other";
+    };
 
 const NON_JUDGED_LIFT_ID = "019e2800-c24a-7e77-943e-1a81f096116f";
 
@@ -68,8 +89,7 @@ export default function EditPostPage() {
   const [unit, setUnit] = useState("");
   const [nonJudgedLift, setNonJudgedLift] = useState(false);
 
-  const [existingMedia, setExistingMedia] = useState<ExistingMediaItem[]>([]);
-  const [selectedFiles, setSelectedFiles] = useState<SelectedFile[]>([]);
+  const [mediaItems, setMediaItems] = useState<MediaEditorItem[]>([]);
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -117,17 +137,28 @@ export default function EditPostPage() {
           setLiftSearch("");
         }
 
-        setExistingMedia(
+        setMediaItems(
           post.media.map((m) => ({
+            localId: m.id,
+            source: "existing",
             id: m.id,
             url: m.url,
             thumbnailUrl: m.thumbnailUrl,
-            kind: m.kind,
+            kind:
+              m.kind === "Image"
+                ? "image"
+                : m.kind === "Video"
+                  ? "video"
+                  : "other",
             originalFileName: m.originalFileName,
           })),
         );
       } catch (error) {
         console.error(error);
+        if (error instanceof ApiError && error.status === 401) {
+          router.push("/login");
+          return;
+        }
         setErrorMessage(
           error instanceof Error ? error.message : "Failed to load post.",
         );
@@ -185,15 +216,19 @@ export default function EditPostPage() {
 
   useEffect(() => {
     return () => {
-      selectedFiles.forEach((item) => URL.revokeObjectURL(item.previewUrl));
+      mediaItems.forEach((item) => {
+        if (item.source === "new") {
+          URL.revokeObjectURL(item.previewUrl);
+        }
+      });
     };
-  }, [selectedFiles]);
+  }, [mediaItems]);
 
   async function handleFilesChange(event: ChangeEvent<HTMLInputElement>) {
     const files = Array.from(event.target.files ?? []);
     if (files.length === 0) return;
 
-    const processedFiles: SelectedFile[] = [];
+    const newItems: MediaEditorItem[] = [];
 
     for (const file of files) {
       const kind = getFileKind(file);
@@ -213,25 +248,29 @@ export default function EditPostPage() {
 
       const previewUrl = URL.createObjectURL(processedFile);
 
-      processedFiles.push({
-        localId: crypto.randomUUID(),
+      newItems.push({
+        localId: createId(),
+        source: "new",
         file: processedFile,
         previewUrl,
         kind,
       });
     }
 
-    setSelectedFiles((prev) => {
+    setMediaItems((prev) => {
       const startIndex = prev.length;
-      const next = [...prev, ...processedFiles];
+      const next = [...prev, ...newItems];
 
-      const firstImageIndex = processedFiles.findIndex(
+      const firstImageIndex = newItems.findIndex(
         (item) => item.kind === "image",
       );
 
       if (firstImageIndex !== -1) {
-        setCropImageSrc(processedFiles[firstImageIndex].previewUrl);
-        setEditingIndex(startIndex + firstImageIndex);
+        const imageItem = newItems[firstImageIndex];
+        if (imageItem.source == "new") {
+          setCropImageSrc(imageItem.previewUrl);
+          setEditingIndex(startIndex + firstImageIndex);
+        }
       }
 
       return next;
@@ -240,43 +279,24 @@ export default function EditPostPage() {
     event.target.value = "";
   }
 
-  function removeExistingMedia(mediaId: string) {
-    setExistingMedia((prev) => prev.filter((m) => m.id !== mediaId));
-  }
-
-  function removeFile(indexToRemove: number) {
-    setSelectedFiles((prev) => {
-      const fileToRemove = prev[indexToRemove];
-      if (fileToRemove) {
-        URL.revokeObjectURL(fileToRemove.previewUrl);
+  function removeMediaItem(localId: string) {
+    setMediaItems((prev) => {
+      const itemToRemove = prev.find((item) => item.localId === localId);
+      if (itemToRemove?.source === "new") {
+        URL.revokeObjectURL(itemToRemove.previewUrl);
       }
-
-      return prev.filter((_, index) => index !== indexToRemove);
+      return prev.filter((item) => item.localId !== localId);
     });
   }
 
-  function moveExistingMedia(index: number, direction: "left" | "right") {
-    setExistingMedia((prev) => {
+  function moveMediaItem(index: number, direction: "left" | "right") {
+    setMediaItems((prev) => {
       const targetIndex = direction === "left" ? index - 1 : index + 1;
 
       if (targetIndex < 0 || targetIndex >= prev.length) return prev;
 
       const copy = [...prev];
       [copy[index], copy[targetIndex]] = [copy[targetIndex], copy[index]];
-
-      return copy;
-    });
-  }
-
-  function moveNewFile(index: number, direction: "left" | "right") {
-    setSelectedFiles((prev) => {
-      const targetIndex = direction === "left" ? index - 1 : index + 1;
-
-      if (targetIndex < 0 || targetIndex >= prev.length) return prev;
-
-      const copy = [...prev];
-      [copy[index], copy[targetIndex]] = [copy[targetIndex], copy[index]];
-
       return copy;
     });
   }
@@ -289,19 +309,31 @@ export default function EditPostPage() {
       setIsSubmitting(true);
       setErrorMessage("");
 
+      const newItems = mediaItems.filter((item) => item.source === "new");
+
       let uploadedMedia: { id: string }[] = [];
 
-      if (selectedFiles.length > 0) {
+      if (newItems.length > 0) {
         uploadedMedia = await uploadMultipleMedia(
-          selectedFiles.map((item) => item.file),
+          newItems.map((item) => item.file),
           () => MediaPurpose.Post,
         );
       }
+      const uploadedIdByLocalId = new Map<string, string>();
 
-      const mediaIds = [
-        ...existingMedia.map((m) => m.id),
-        ...uploadedMedia.map((m) => m.id),
-      ];
+      newItems.forEach((item, index) => {
+        uploadedIdByLocalId.set(item.localId, uploadedMedia[index].id);
+      });
+
+      const mediaIds = mediaItems
+        .map((item) => {
+          if (item.source === "existing") {
+            return item.id;
+          }
+
+          return uploadedIdByLocalId.get(item.localId) ?? "";
+        })
+        .filter((id): id is string => Boolean(id));
 
       const payload = {
         title: title.trim(),
@@ -314,12 +346,20 @@ export default function EditPostPage() {
 
       await updatePost(postId, payload);
 
-      selectedFiles.forEach((item) => URL.revokeObjectURL(item.previewUrl));
-      setSelectedFiles([]);
+      mediaItems.forEach((item) => {
+        if (item.source === "new") {
+          URL.revokeObjectURL(item.previewUrl);
+        }
+      });
+      setMediaItems([]);
 
       router.push(`/post/${postId}`);
     } catch (error) {
       console.error(error);
+      if (error instanceof ApiError && error.status === 403) {
+        setErrorMessage("You do not have permission to update this post.");
+        return;
+      }
       setErrorMessage(
         error instanceof Error ? error.message : "Failed to update post.",
       );
@@ -371,7 +411,7 @@ export default function EditPostPage() {
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="Give your post a title"
                 maxLength={120}
-                className="w-full rounded-2xl border border-gray-700 bg-zinc-900 px-4 py-3 text-sm text-white outline-none transition focus:border-white"
+                className="w-full rounded-2xl border border-gray-700 bg-zinc-900 px-4 py-3 text-base sm:text-sm text-white outline-none transition focus:border-white"
               />
               <p className="mt-1 text-right text-xs text-gray-400">
                 {title.length}/120
@@ -450,7 +490,7 @@ export default function EditPostPage() {
                     setLiftId("");
                   }}
                   placeholder="Search bench, squat, deadlift..."
-                  className="w-full rounded-2xl border border-gray-700 bg-zinc-900 px-4 py-3 text-sm text-white outline-none transition focus:border-white"
+                  className="w-full rounded-2xl border border-gray-700 bg-zinc-900 px-4 py-3 text-base sm:text-sm text-white outline-none transition focus:border-white"
                 />
 
                 {liftResults.length > 0 && !selectedLift && (
@@ -503,7 +543,7 @@ export default function EditPostPage() {
                     placeholder="225"
                     min="0"
                     step="0.5"
-                    className="w-full rounded-2xl border border-gray-700 bg-zinc-900 px-4 py-3 text-sm text-white outline-none transition focus:border-white"
+                    className="w-full rounded-2xl border border-gray-700 bg-zinc-900 px-4 py-3 text-base sm:text-sm text-white outline-none transition focus:border-white"
                   />
                 </div>
 
@@ -534,8 +574,7 @@ export default function EditPostPage() {
             <div className="flex items-center justify-between">
               <h2 className="text-sm font-medium text-white">Media</h2>
               <span className="text-xs text-gray-400">
-                {existingMedia.length + selectedFiles.length} file
-                {existingMedia.length + selectedFiles.length === 1 ? "" : "s"}
+                {mediaItems.length} file{mediaItems.length === 1 ? "" : "s"}
               </span>
             </div>
 
@@ -556,82 +595,9 @@ export default function EditPostPage() {
               className="hidden"
             />
 
-            {(existingMedia.length > 0 || selectedFiles.length > 0) && (
+            {mediaItems.length > 0 && (
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                {existingMedia.map((media, index) => (
-                  <div
-                    key={media.id}
-                    className="relative overflow-hidden rounded-2xl border border-gray-800 bg-zinc-950"
-                  >
-                    <div className="absolute left-2 top-2 z-10 flex gap-1">
-                      <button
-                        type="button"
-                        onClick={() => moveExistingMedia(index, "left")}
-                        disabled={index === 0}
-                        className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-black/70 text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-40"
-                        aria-label="Move media left"
-                      >
-                        ←
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => moveExistingMedia(index, "right")}
-                        disabled={index === existingMedia.length - 1}
-                        className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-black/70 text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-40"
-                        aria-label="Move media right"
-                      >
-                        →
-                      </button>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => removeExistingMedia(media.id)}
-                      className="absolute right-2 top-2 z-10 inline-flex h-8 w-8 items-center justify-center rounded-full bg-black/70 text-white transition hover:bg-black"
-                      aria-label="Remove media"
-                    >
-                      <BiX size={18} />
-                    </button>
-
-                    <div className="aspect-4/5 max-h-90 bg-zinc-900">
-                      {media.kind === "Image" ? (
-                        <img
-                          src={media.url}
-                          alt={media.originalFileName ?? "Existing media"}
-                          className="h-full w-full object-cover"
-                        />
-                      ) : media.kind === "Video" ? (
-                        <div className="relative h-full w-full">
-                          <video
-                            src={media.url}
-                            className="h-full w-full object-cover"
-                            muted
-                            playsInline
-                          />
-                          <div className="absolute inset-x-0 bottom-0 flex items-center gap-2 bg-black/55 px-2 py-2 text-white">
-                            <BiVideo size={18} />
-                            <span className="truncate text-xs">
-                              {media.originalFileName ?? "Video"}
-                            </span>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="flex h-full items-center justify-center text-sm text-zinc-400">
-                          Media
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="border-t border-gray-800 px-3 py-2">
-                      <p className="truncate text-xs font-medium text-zinc-200">
-                        Existing media
-                      </p>
-                    </div>
-                  </div>
-                ))}
-
-                {selectedFiles.map((item, index) => (
+                {mediaItems.map((item, index) => (
                   <div
                     key={item.localId}
                     className="relative overflow-hidden rounded-2xl border border-gray-800 bg-zinc-950"
@@ -639,7 +605,7 @@ export default function EditPostPage() {
                     <div className="absolute left-2 top-2 z-10 flex gap-1">
                       <button
                         type="button"
-                        onClick={() => moveNewFile(index, "left")}
+                        onClick={() => moveMediaItem(index, "left")}
                         disabled={index === 0}
                         className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-black/70 text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-40"
                         aria-label="Move media left"
@@ -649,8 +615,8 @@ export default function EditPostPage() {
 
                       <button
                         type="button"
-                        onClick={() => moveNewFile(index, "right")}
-                        disabled={index === selectedFiles.length - 1}
+                        onClick={() => moveMediaItem(index, "right")}
+                        disabled={index === mediaItems.length - 1}
                         className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-black/70 text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-40"
                         aria-label="Move media right"
                       >
@@ -660,32 +626,65 @@ export default function EditPostPage() {
 
                     <button
                       type="button"
-                      onClick={() => removeFile(index)}
+                      onClick={() => removeMediaItem(item.localId)}
                       className="absolute right-2 top-2 z-10 inline-flex h-8 w-8 items-center justify-center rounded-full bg-black/70 text-white transition hover:bg-black"
-                      aria-label={`Remove ${item.file.name}`}
+                      aria-label="Remove media"
                     >
                       <BiX size={18} />
                     </button>
 
                     <div className="aspect-4/5 max-h-90 bg-zinc-900">
                       {item.kind === "image" ? (
-                        <img
-                          src={item.previewUrl}
-                          alt={item.file.name}
-                          className="h-full w-full object-cover"
-                        />
+                        <div>
+                          <img
+                            src={
+                              item.source === "existing"
+                                ? item.url
+                                : item.previewUrl
+                            }
+                            alt={
+                              item.source === "existing"
+                                ? (item.originalFileName ?? "Existing media")
+                                : item.file.name
+                            }
+                            className="h-full w-full object-cover"
+                          />
+                          <div className="absolute inset-x-0 bottom-0 flex items-center gap-2 bg-black/55 px-2 py-2 text-white">
+                            <BiDetail size={18} />
+                            <span className="truncate text-xs">
+                              {item.source === "existing"
+                                ? (item.originalFileName ?? "Existing media")
+                                : item.file.name}
+                            </span>
+                          </div>
+                        </div>
                       ) : item.kind === "video" ? (
                         <div className="relative h-full w-full">
                           <video
-                            src={item.previewUrl}
+                            src={
+                              item.source === "existing"
+                                ? item.url
+                                : item.previewUrl
+                            }
                             className="h-full w-full object-cover"
                             muted
                             playsInline
+                            preload="metadata"
+                            onLoadedMetadata={(e) => {
+                              const video = e.currentTarget;
+                              video.currentTime = Math.min(
+                                0.1,
+                                video.duration || 0,
+                              );
+                            }}
                           />
+
                           <div className="absolute inset-x-0 bottom-0 flex items-center gap-2 bg-black/55 px-2 py-2 text-white">
                             <BiVideo size={18} />
                             <span className="truncate text-xs">
-                              {item.file.name}
+                              {item.source === "existing"
+                                ? (item.originalFileName ?? "Video")
+                                : item.file.name}
                             </span>
                           </div>
                         </div>
@@ -693,19 +692,13 @@ export default function EditPostPage() {
                         <div className="flex h-full flex-col items-center justify-center p-3 text-center text-zinc-400">
                           <BiDetail size={24} />
                           <span className="mt-2 break-all text-xs">
-                            {item.file.name}
+                            {item.source === "existing"
+                              ? (item.originalFileName ?? "Media")
+                              : item.file.name}{" "}
+                            d
                           </span>
                         </div>
                       )}
-                    </div>
-
-                    <div className="border-t border-gray-800 px-3 py-2">
-                      <p className="truncate text-xs font-medium text-zinc-200">
-                        {item.file.name}
-                      </p>
-                      <p className="text-[11px] text-zinc-500">
-                        {formatFileSize(item.file.size)}
-                      </p>
                     </div>
                   </div>
                 ))}
@@ -747,7 +740,7 @@ export default function EditPostPage() {
               </p>
             </div>
 
-            <div className="absolute inset-0">
+            <div className="absolute left-0 right-0 top-19 bottom-39">
               <Cropper
                 image={cropImageSrc}
                 crop={crop}
@@ -809,9 +802,14 @@ export default function EditPostPage() {
                       croppedAreaPixels,
                     );
 
-                    const original = selectedFiles[editingIndex];
+                    const original = mediaItems[editingIndex];
 
-                    if (!original) return;
+                    if (
+                      !original ||
+                      original.source !== "new" ||
+                      original.kind !== "image"
+                    )
+                      return;
 
                     const croppedFile = new File(
                       [croppedBlob],
@@ -823,9 +821,11 @@ export default function EditPostPage() {
 
                     const newPreview = URL.createObjectURL(croppedFile);
 
-                    setSelectedFiles((prev) =>
+                    setMediaItems((prev) =>
                       prev.map((item, index) => {
                         if (index !== editingIndex) return item;
+
+                        if (item.source !== "new") return item;
 
                         URL.revokeObjectURL(item.previewUrl);
 

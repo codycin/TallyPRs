@@ -4,13 +4,15 @@ import { useEffect, useState } from "react";
 import { searchUsers } from "@/services/UserSearch/userSearchService";
 import { UserSearchResult } from "@/types/userSearch";
 import Link from "next/link";
+import { ApiError } from "@/utils/apiError";
+import { useRouter } from "next/navigation";
 
 export default function SearchPage() {
   const [query, setQuery] = useState("");
   const [users, setUsers] = useState<UserSearchResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-
+  const router = useRouter();
   useEffect(() => {
     const trimmedQuery = query.trim();
 
@@ -29,6 +31,10 @@ export default function SearchPage() {
         const results = await searchUsers(trimmedQuery);
         setUsers(results);
       } catch (err) {
+        if (err instanceof ApiError && err.status === 401) {
+          router.push("/login");
+          return;
+        }
         setError(err instanceof Error ? err.message : "Failed to search users");
       } finally {
         setLoading(false);
@@ -54,7 +60,7 @@ export default function SearchPage() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search users..."
-            className="w-full rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-500 focus:border-sky-700 focus:bg-zinc-950 focus:ring-4 focus:ring-sky-950"
+            className="w-full rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3 text-base sm:text-sm text-zinc-100 outline-none transition placeholder:text-zinc-500 focus:border-sky-700 focus:bg-zinc-950 focus:ring-4 focus:ring-sky-950"
           />
         </div>
 

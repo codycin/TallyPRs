@@ -3,10 +3,53 @@ import {
   UpdateProfileRequest,
   UserProfileResponse,
 } from "@/types/profile";
+import { followUserResponse } from "@/types/follow";
 import { apiFetch } from "../apiClient";
 
 export async function getProfile(): Promise<UserProfileResponse> {
   const response = await apiFetch("/me/UserProfile", {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error(
+      `API Error Status: ${response.status} ${response.statusText}`,
+    );
+    console.error(`API Error Details: ${errorText}`);
+    throw new Error(`API failed with status ${response.status}`);
+  }
+
+  return response.json();
+}
+
+export async function getFollowing(): Promise<followUserResponse[]> {
+  const response = await apiFetch("/me/UserProfile/Following", {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error(
+      `API Error Status: ${response.status} ${response.statusText}`,
+    );
+    console.error(`API Error Details: ${errorText}`);
+    throw new Error(`API failed with status ${response.status}`);
+  }
+
+  return response.json();
+}
+
+export async function getFollowers(): Promise<followUserResponse[]> {
+  const response = await apiFetch("/me/UserProfile/Follower", {
     method: "GET",
     headers: {
       "Content-Type": "application/json",

@@ -32,9 +32,15 @@ export default function ProfilePage() {
         setProfile(data);
       } catch (error) {
         console.error(error);
-        setErrorMessage(
-          error instanceof Error ? error.message : "Failed to load profile.",
-        );
+        if (
+          error instanceof Error &&
+          error.message === "API failed with status 401"
+        ) {
+          router.push(`/login`);
+        } else
+          setErrorMessage(
+            error instanceof Error ? error.message : "Failed to load profile.",
+          );
       } finally {
         setIsLoading(false);
       }
@@ -108,9 +114,19 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4 text-sm text-gray-400">
-            <div>Followers: {profile?.followCount} </div>
-            <div>Following: {profile?.followingCount} </div>
+          <div className="grid grid-cols-2 gap-4 text-sm text-gray-400 text-center">
+            <button
+              className="mx-auto w-fit rounded-md bg-blue-600 px-1 py-1 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              onClick={() => router.push("/profile/followers")}
+            >
+              Followers: {profile?.followCount}
+            </button>
+            <button
+              className="mx-auto w-fit rounded-md bg-gray-600 px-1 py-1 text-sm font-medium text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              onClick={() => router.push("/profile/following")}
+            >
+              Following: {profile?.followingCount}
+            </button>
           </div>
           <div className="grid gap-4">
             <div className="rounded-2xl border border-gray-800 bg-zinc-900/60 p-4">

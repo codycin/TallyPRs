@@ -39,7 +39,7 @@ export async function createPost(
 
     const text = await response.text();
     console.error("Create post failed:", text);
-    throw new Error(text || "Failed to create post.");
+    throw new Error(text || "Failed to create post." + response.status);
   }
 
   const createdPost: PostResponse = await response.json();

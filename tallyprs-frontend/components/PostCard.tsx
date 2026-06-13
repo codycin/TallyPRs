@@ -337,7 +337,7 @@ export default function PostCard({ post, onDeleted }: PostCardProps) {
                       <img
                         src={m.url}
                         alt={`post media ${index + 1}`}
-                        className="h-105 max-h-[70vh] w-full object-cover md:rounded-2xl"
+                        className="aspect-4/5 w-full object-cover md:rounded-2xl"
                       />
 
                       {post.media.length > 1 && (

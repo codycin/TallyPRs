@@ -9,6 +9,7 @@ using TallahasseePRs.Api.Services;
 using TallahasseePRs.Api.Services.FeedServices;
 using TallahasseePRs.Api.Services.PostServices;
 using TallahasseePRs.Api.Services.ProfileServices;
+using TallahasseePRs.Api.DTOs.Follows;
 
 namespace TallahasseePRs.Api.Controllers
 {
@@ -57,5 +58,22 @@ namespace TallahasseePRs.Api.Controllers
                 return BadRequest(ex.Message);
             }
         }
+        [HttpGet("following")]
+        public async Task<ActionResult<List<FollowUserResponse>>> GetFollowing()
+        {
+            var profile = _currentUser.GetUserId();
+
+            return await _profiles.GetFollowingForUserAsync(profile);
+
+        }
+        [HttpGet("follower")]
+        public async Task<ActionResult<List<FollowUserResponse>>> GetFollowers()
+        {
+            var profile = _currentUser.GetUserId();
+
+            return await _profiles.GetFollowersForUserAsync(profile);
+
+        }
+
     }
 }

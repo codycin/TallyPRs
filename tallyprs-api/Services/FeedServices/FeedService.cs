@@ -25,8 +25,8 @@ namespace TallahasseePRs.Api.Services.FeedServices
         }
 
         public async Task<FeedPage<PostResponse>> GetFeedAsync(
-     FeedQuery query,
-     Guid? requestingUser)
+         FeedQuery query,
+         Guid? requestingUser)
         {
             var limit = Math.Clamp(query.Limit, 1, 50);
 
@@ -137,6 +137,7 @@ namespace TallahasseePRs.Api.Services.FeedServices
                         : null,
                     Description = post.Description,
                     Media = post.MediaItems
+                        .Where(m=> m.Status != Models.MediaStatus.Deleted)
                         .OrderBy(m => m.SortOrder)
                         .ThenBy(m => m.CreatedAt)
                         .Select(ToMediaResponse)
@@ -174,7 +175,7 @@ namespace TallahasseePRs.Api.Services.FeedServices
             return new MediaResponse
             {
                 Id = media.Id,
-                Url = _storage.GetPublicUrl(media.ObjectKey),
+                Url = media.PlaybackObjectKey == null ? _storage.GetPublicUrl(media.ObjectKey) : _storage.GetPublicUrl(media.PlaybackObjectKey),
                 ThumbnailUrl = media.ThumbnailObjectKey != null
                     ? _storage.GetPublicUrl(media.ThumbnailObjectKey)
                     : null,
@@ -183,7 +184,7 @@ namespace TallahasseePRs.Api.Services.FeedServices
                 Purpose = media.Purpose.ToString(),
 
                 OriginalFileName = media.OriginalFileName,
-                ContentType = media.ContentType,
+                ContentType = media.PlaybackContentType == null ? media.ContentType : media.PlaybackContentType,
                 SizeBytes = media.SizeBytes,
 
                 Width = media.Width,

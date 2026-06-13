@@ -41,7 +41,9 @@ builder.Services.AddCors(options =>
                 "https://localhost:3000",
                 "http://localhost:3001",
                 "https://tally-p-i2mvaktmj-cody-cintron-s-projects.vercel.app",
-                "https://tally-p-rs.vercel.app"
+                "https://tally-p-rs.vercel.app",
+                // Local phone testing
+                "http://192.168.1.43:3000"
             )
             .AllowAnyHeader()
             .AllowAnyMethod();
@@ -193,6 +195,8 @@ else
 
 var app = builder.Build();
 
+app.Logger.LogInformation("Running in {Environment} environment", app.Environment.EnvironmentName);
+
 app.UseCors("Frontend");
 app.UseRateLimiter();
 
@@ -220,7 +224,10 @@ if (app.Environment.IsDevelopment())
 }
 
 // Configure the HTTP request pipeline.
-app.UseHttpsRedirection();
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
 app.UseAuthentication();
 app.UseAuthorization();
 

@@ -5,6 +5,14 @@ export type followResponse = {
   FollowedAt: Date;
 };
 
+export type followUserResponse = {
+  id: string;
+  userId: string;
+  displayName: string;
+  currentUserFollows: boolean;
+  isMutual: boolean;
+};
+
 export type followRequest = {
   FollowedId: string;
 };

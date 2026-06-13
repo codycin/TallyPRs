@@ -86,6 +86,20 @@ export default function Navbar() {
             >
               Settings
             </Link>
+            <Link
+              href="/profile"
+              onClick={() => setIsOpen(false)}
+              className="block px-4 py-3 text-sm hover:bg-zinc-800 transition"
+            >
+              Profile
+            </Link>
+            <Link
+              href="/about"
+              onClick={() => setIsOpen(false)}
+              className="block px-4 py-3 text-sm hover:bg-zinc-800 transition"
+            >
+              About us
+            </Link>
           </div>
         )}
       </div>

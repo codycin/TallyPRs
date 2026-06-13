@@ -366,14 +366,14 @@ namespace TallahasseePRs.Api.Services.PostServices
                     .Select(m => new MediaResponse
                     {
                         Id = m.Id,
-                        Url = _storage.GetPublicUrl(m.ObjectKey),
+                        Url = _storage.GetPublicUrl(m.PlaybackObjectKey == null ? m.ObjectKey : m.PlaybackObjectKey),
                         ThumbnailUrl = m.ThumbnailObjectKey != null
                             ? _storage.GetPublicUrl(m.ThumbnailObjectKey)
                             : null,
                         Kind = m.Kind.ToString(),
                         Purpose = m.Purpose.ToString(),
                         OriginalFileName = m.OriginalFileName,
-                        ContentType = m.ContentType,
+                        ContentType = (m.PlaybackContentType == null ? m.ContentType : m.PlaybackContentType),
                         SizeBytes = m.SizeBytes,
                         Width = m.Width,
                         Height = m.Height,
