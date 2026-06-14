@@ -9,9 +9,17 @@
 
   <ItemGroup>
     <Compile Remove="Data\Configurations\NewFolder\**" />
+    <Compile Remove="Extensions\**" />
+    <Compile Remove="Middleware\**" />
     <Content Remove="Data\Configurations\NewFolder\**" />
+    <Content Remove="Extensions\**" />
+    <Content Remove="Middleware\**" />
     <EmbeddedResource Remove="Data\Configurations\NewFolder\**" />
+    <EmbeddedResource Remove="Extensions\**" />
+    <EmbeddedResource Remove="Middleware\**" />
     <None Remove="Data\Configurations\NewFolder\**" />
+    <None Remove="Extensions\**" />
+    <None Remove="Middleware\**" />
   </ItemGroup>
 
   <ItemGroup>
@@ -43,8 +51,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Middleware\" />
-    <Folder Include="Extensions\" />
     <Folder Include="Data\Migrations\" />
   </ItemGroup>
 

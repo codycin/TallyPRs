@@ -11,6 +11,7 @@ import PostCard from "@/components/PostCard";
 import { getUserPostFeed } from "@/services/Feed/feedService";
 import type { PostResponse } from "@/types/post";
 import { useRouter } from "next/navigation";
+import { createConversation } from "@/services/Messages/messageService";
 
 export default function PublicProfilePage() {
   //Route params
@@ -61,6 +62,19 @@ export default function PublicProfilePage() {
 
     loadProfile();
   }, [userId]);
+  async function handleMessageClicked() {
+    if (!userId) {
+      setErrorMessage("Missing user ID.");
+      setIsLoading(false);
+      return;
+    }
+    try {
+      const conversation = await createConversation(userId);
+      router.push(`/messages/${conversation.id}`);
+    } catch (error) {
+      console.error(error);
+    }
+  }
 
   async function handleFollowToggle() {
     if (!userId || !profile || isSubmitting) return;
@@ -141,6 +155,13 @@ export default function PublicProfilePage() {
             </h1>
           </div>
         </header>
+        <button
+          type="button"
+          onClick={handleMessageClicked}
+          className="rounded-full bg-blue-600 px-4 py-2 text-sm font-medium text-white"
+        >
+          Message
+        </button>
 
         <section className="space-y-6 p-4 md:p-6">
           <div className="flex flex-col items-center gap-4">

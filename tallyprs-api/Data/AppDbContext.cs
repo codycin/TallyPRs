@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using TallahasseePRs.Api.Models;
+using TallahasseePRs.Api.Models.Messages;
 using TallahasseePRs.Api.Models.Notifications;
 using TallahasseePRs.Api.Models.Posts;
 using TallahasseePRs.Api.Models.Users;
@@ -20,6 +21,12 @@ public class AppDbContext : DbContext
     public DbSet<Follow> Follows => Set<Follow>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<Media> Media => Set<Media>();
+
+    public DbSet<Conversation> Conversations => Set<Conversation>();
+
+    public DbSet<ConversationParticipant> ConversationParticipants => Set<ConversationParticipant>();
+
+    public DbSet<Message> Messages => Set<Message>();
 
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -276,6 +283,20 @@ public class AppDbContext : DbContext
         // PROFILES 
         modelBuilder.Entity<Profile>()
             .HasIndex(p => p.DisplayName);
+
+        //MESSAGING
+        modelBuilder.Entity<ConversationParticipant>()
+        .HasKey(x => new { x.ConversationId, x.UserId });
+
+        modelBuilder.Entity<ConversationParticipant>()
+            .HasOne(x => x.Conversation)
+            .WithMany(x => x.Participants)
+            .HasForeignKey(x => x.ConversationId);
+
+        modelBuilder.Entity<Message>()
+            .HasOne(x => x.Conversation)
+            .WithMany(x => x.Messages)
+            .HasForeignKey(x => x.ConversationId);
 
     }
 
