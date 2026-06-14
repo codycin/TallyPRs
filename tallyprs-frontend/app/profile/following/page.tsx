@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { BiUser, BiLoaderAlt } from "react-icons/bi";
+import { BiLeftArrowCircle, BiLoaderAlt } from "react-icons/bi";
 
 import { getFollowing } from "@/services/Profile/profile";
 import { UserProfileResponse } from "@/types/profile";
@@ -21,6 +21,12 @@ export default function FollowingPage() {
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
   const [query, setQuery] = useState("");
+
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    setCurrentUserId(localStorage.getItem("currentUserId"));
+  }, []);
 
   useEffect(() => {
     async function loadFollowing() {
@@ -110,9 +116,18 @@ export default function FollowingPage() {
       <main className="min-h-screen bg-black px-4 py-8 text-zinc-50">
         <section className="mx-auto max-w-3xl">
           <div className="mb-6 items-center justify-between gap-4">
-            <h1 className="text-3xl mb-6 font-bold tracking-tight text-zinc-50">
-              Following
-            </h1>
+            <div className="flex gap-4 items-baseline">
+              <BiLeftArrowCircle
+                className="mb-2 h-6 w-6"
+                onClick={() => {
+                  router.back();
+                }}
+              />
+              <h1 className="text-3xl mb-6 font-bold tracking-tight text-zinc-50">
+                Following
+              </h1>
+            </div>
+
             <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-4 shadow-lg shadow-black/20">
               <input
                 value={query}
@@ -126,6 +141,7 @@ export default function FollowingPage() {
                 <UserCard
                   key={following.id}
                   follow={following}
+                  currentUserId={currentUserId}
                   updating={updatingId === following.id}
                   onClicked={handleFollowClicked}
                 />

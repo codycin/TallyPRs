@@ -27,14 +27,28 @@ export async function getProfile(): Promise<UserProfileResponse> {
   return response.json();
 }
 
-export async function getFollowing(): Promise<followUserResponse[]> {
-  const response = await apiFetch("/me/UserProfile/Following", {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    cache: "no-store",
-  });
+export async function getFollowing(
+  userId?: string,
+): Promise<followUserResponse[]> {
+  let response;
+
+  if (!userId) {
+    response = await apiFetch("/me/UserProfile/Following", {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      cache: "no-store",
+    });
+  } else {
+    response = await apiFetch(`/profiles/${userId}/Following`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      cache: "no-store",
+    });
+  }
 
   if (!response.ok) {
     const errorText = await response.text();
@@ -48,14 +62,28 @@ export async function getFollowing(): Promise<followUserResponse[]> {
   return response.json();
 }
 
-export async function getFollowers(): Promise<followUserResponse[]> {
-  const response = await apiFetch("/me/UserProfile/Follower", {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    cache: "no-store",
-  });
+export async function getFollowers(
+  userId?: string,
+): Promise<followUserResponse[]> {
+  let response;
+  if (!userId) {
+    response = await apiFetch("/me/UserProfile/Follower", {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      cache: "no-store",
+    });
+  } else {
+    console.log("hist");
+    response = await apiFetch(`/profiles/${userId}/Follower`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      cache: "no-store",
+    });
+  }
 
   if (!response.ok) {
     const errorText = await response.text();

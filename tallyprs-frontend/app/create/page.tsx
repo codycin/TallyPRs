@@ -241,12 +241,11 @@ export default function CreatePostPage() {
 
   return (
     <main className="min-h-screen bg-black text-white">
-      <div className="mx-auto min-h-screen w-full max-w-2xl bg-black md:my-8 md:min-h-0 md:rounded-3xl md:shadow-xl">
+      <div className="mx-auto min-h-screen w-full max-w-2xl bg-black md:min-h-0 md:rounded-3xl md:shadow-xl">
         <header className="sticky top-0 z-10 flex items-center justify-between border-b border-gray-800 bg-black px-4 py-4 md:rounded-t-3xl">
           <h1 className="text-lg font-semibold text-white">Create Post</h1>
           <div className="w-10" />
         </header>
-
         <form onSubmit={handleSubmit} className="space-y-6 p-4 md:p-6">
           <section className="space-y-4">
             <div>

@@ -6,6 +6,7 @@ import { UserSearchResult } from "@/types/userSearch";
 import Link from "next/link";
 import { ApiError } from "@/utils/apiError";
 import { useRouter } from "next/navigation";
+import { BiLeftArrowCircle } from "react-icons/bi";
 
 export default function SearchPage() {
   const [query, setQuery] = useState("");

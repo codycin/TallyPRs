@@ -14,5 +14,7 @@ namespace TallahasseePRs.Api.Services.ProfileServices
     public interface IProfileQueryService
     {
         Task<PublicProfileResponse?> GetPublicByIdAsync(Guid? userId);
+        Task<List<FollowUserResponse>> GetFollowingForOtherUserAsync(Guid userId, Guid otherUserId);
+        Task<List<FollowUserResponse>> GetFollowersForOtherUserAsync(Guid userId, Guid otherUserId);
     }
 }

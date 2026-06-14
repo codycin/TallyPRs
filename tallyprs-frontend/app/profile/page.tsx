@@ -76,7 +76,7 @@ export default function ProfilePage() {
 
   return (
     <main className="min-h-screen bg-black text-white">
-      <div className="mx-auto min-h-screen w-full max-w-2xl bg-black md:my-8 md:min-h-0 md:rounded-3xl md:shadow-xl">
+      <div className="mx-auto min-h-screen w-full max-w-2xl bg-black md:min-h-0 md:rounded-3xl md:shadow-xl">
         <header className="sticky top-0 z-10 flex items-center justify-between border-b border-gray-800 bg-black px-4 py-4 md:rounded-t-3xl">
           <h1 className="text-lg font-semibold text-white">My Profile</h1>
           <button

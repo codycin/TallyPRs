@@ -3,14 +3,18 @@ import { useEffect, useState } from "react";
 import { BiLeftArrowCircle, BiLoaderAlt } from "react-icons/bi";
 
 import { getFollowers } from "@/services/Profile/profile";
-import { UserProfileResponse } from "@/types/profile";
 import { followUserResponse } from "@/types/follow";
 
 import { useRouter } from "next/navigation";
 import UserCard from "@/components/userCard";
 import { unfollowUser, followUser } from "@/services/Follow/followService";
+import { use } from "react";
 
-export default function followerPage() {
+export default function followerPage({
+  params,
+}: {
+  params: Promise<{ userid: string }>;
+}) {
   const router = useRouter();
 
   const [followers, setFollowers] = useState<followUserResponse[]>([]);
@@ -19,6 +23,8 @@ export default function followerPage() {
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
   const [query, setQuery] = useState("");
+
+  const userId = use(params);
 
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
@@ -32,7 +38,7 @@ export default function followerPage() {
         setIsLoading(true);
         setErrorMessage("");
 
-        const data = await getFollowers();
+        const data = await getFollowers(userId.userid);
         setFollowers(data);
       } catch (error) {
         console.error(error);

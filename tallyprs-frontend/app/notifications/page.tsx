@@ -10,7 +10,7 @@ import {
 import { NotificationResponse } from "@/types/notification";
 import { ApiError } from "@/utils/apiError";
 import { useRouter } from "next/navigation";
-
+import { BiLeftArrowCircle } from "react-icons/bi";
 export default function NotificationsPage() {
   const [notifications, setNotifications] = useState<NotificationResponse[]>(
     [],
@@ -197,8 +197,8 @@ function NotificationCard({
               {notification.actorUsername
                 ? `@${notification.actorUsername}`
                 : "System"}
-            </span>{" "}
-            <span>{notification.message}</span>
+            </span>
+            <span> {notification.message}</span>
           </Link>
 
           <p className="mt-1 text-xs text-zinc-500">
@@ -229,7 +229,7 @@ function getNotificationHref(notification: NotificationResponse) {
   }
 
   if (notification.actorId) {
-    return `/profiles/${notification.actorId}`;
+    return `/profile/${notification.actorId}`;
   }
 
   return "/notifications";

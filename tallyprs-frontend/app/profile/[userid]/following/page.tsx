@@ -1,24 +1,31 @@
 "use client";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { BiLeftArrowCircle, BiLoaderAlt } from "react-icons/bi";
 
-import { getFollowers } from "@/services/Profile/profile";
-import { UserProfileResponse } from "@/types/profile";
+import { getFollowing } from "@/services/Profile/profile";
 import { followUserResponse } from "@/types/follow";
 
-import { useRouter } from "next/navigation";
-import UserCard from "@/components/userCard";
 import { unfollowUser, followUser } from "@/services/Follow/followService";
 
-export default function followerPage() {
+import { useRouter } from "next/navigation";
+
+import UserCard from "@/components/userCard";
+import { use } from "react";
+export default function FollowingPage({
+  params,
+}: {
+  params: Promise<{ userid: string }>;
+}) {
   const router = useRouter();
 
-  const [followers, setFollowers] = useState<followUserResponse[]>([]);
+  const [following, setFollowing] = useState<followUserResponse[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
   const [query, setQuery] = useState("");
+
+  const p = use(params);
 
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
@@ -27,13 +34,13 @@ export default function followerPage() {
   }, []);
 
   useEffect(() => {
-    async function loadFollowers() {
+    async function loadFollowing() {
       try {
         setIsLoading(true);
         setErrorMessage("");
 
-        const data = await getFollowers();
-        setFollowers(data);
+        const data = await getFollowing(p.userid);
+        setFollowing(data);
       } catch (error) {
         console.error(error);
         if (
@@ -52,7 +59,7 @@ export default function followerPage() {
       }
     }
 
-    loadFollowers();
+    loadFollowing();
   }, []);
 
   async function handleFollowClicked(userId: string, isFollowed: boolean) {
@@ -63,7 +70,7 @@ export default function followerPage() {
       } else {
         await followUser({ FollowedId: userId });
       }
-      setFollowers((prev) =>
+      setFollowing((prev) =>
         prev.map((user) =>
           user.userId === userId
             ? {
@@ -122,9 +129,10 @@ export default function followerPage() {
                 }}
               />
               <h1 className="text-3xl mb-6 font-bold tracking-tight text-zinc-50">
-                Followers
+                Following
               </h1>
             </div>
+
             <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-4 shadow-lg shadow-black/20">
               <input
                 value={query}
@@ -134,7 +142,7 @@ export default function followerPage() {
               />
             </div>
             <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-4 shadow-lg shadow-black/20">
-              {followers.map((following) => (
+              {following.map((following) => (
                 <UserCard
                   key={following.id}
                   follow={following}

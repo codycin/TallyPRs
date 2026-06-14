@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { BiUser, BiLoaderAlt } from "react-icons/bi";
+import { BiUser, BiLeftArrowCircle, BiLoaderAlt } from "react-icons/bi";
 import { getPublicProfile } from "@/services/Profile/profile";
 import { PublicProfileResponse } from "@/types/profile";
 import { followUser, unfollowUser } from "@/services/Follow/followService";
@@ -127,11 +127,19 @@ export default function PublicProfilePage() {
 
   return (
     <main className="min-h-screen bg-black text-white">
-      <div className="mx-auto min-h-screen w-full max-w-2xl bg-black md:my-8 md:min-h-0 md:rounded-3xl md:shadow-xl">
+      <div className="mx-auto min-h-screen w-full max-w-2xl bg-black  md:min-h-0 md:rounded-3xl md:shadow-xl">
         <header className="sticky top-0 z-10 flex items-center justify-between border-b border-gray-800 bg-black px-4 py-4 md:rounded-t-3xl">
-          <h1 className="text-lg font-semibold text-white">
-            {profile?.displayName || "No display name set"}
-          </h1>
+          <div className="flex gap-4 items-center">
+            <BiLeftArrowCircle
+              className="h-6 w-6"
+              onClick={() => {
+                router.back();
+              }}
+            />
+            <h1 className="text-lg font-semibold text-white">
+              {profile?.displayName || "No display name set"}
+            </h1>
+          </div>
         </header>
 
         <section className="space-y-6 p-4 md:p-6">
@@ -176,9 +184,19 @@ export default function PublicProfilePage() {
               </button>
             </div>
           )}
-          <div className="grid grid-cols-2 gap-4 text-sm text-gray-400">
-            <div>Followers: {profile?.followCount}</div>
-            <div>Following: {profile?.followingCount}</div>
+          <div className="grid grid-cols-2 gap-4 text-sm text-gray-400 text-center">
+            <button
+              className="mx-auto w-fit rounded-md bg-blue-600 px-1 py-1 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              onClick={() => router.push(`/profile/${userId}/followers`)}
+            >
+              Followers: {profile?.followCount}
+            </button>
+            <button
+              className="mx-auto w-fit rounded-md bg-gray-600 px-1 py-1 text-sm font-medium text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              onClick={() => router.push(`/profile/${userId}/following`)}
+            >
+              Following: {profile?.followingCount}
+            </button>
           </div>
           <div className="grid gap-4">
             <div className="rounded-2xl border border-gray-800 bg-zinc-900/60 p-4">
